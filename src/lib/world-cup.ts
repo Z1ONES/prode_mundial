@@ -53,6 +53,61 @@ export function teamLabel(team: string) {
   return `${teamFlags[team] ?? "🏳️"} ${team}`;
 }
 
+export const teamNamesEs: Record<string, string> = {
+  Algeria: "Argelia",
+  Argentina: "Argentina",
+  Australia: "Australia",
+  Austria: "Austria",
+  Belgium: "Belgica",
+  "Bosnia and Herzegovina": "Bosnia y Herzegovina",
+  Brazil: "Brasil",
+  Canada: "Canada",
+  "Cape Verde": "Cabo Verde",
+  Colombia: "Colombia",
+  Croatia: "Croacia",
+  "Czech Republic": "Republica Checa",
+  "DR Congo": "Republica Democratica del Congo",
+  Curaçao: "Curazao",
+  Ecuador: "Ecuador",
+  Egypt: "Egipto",
+  England: "Inglaterra",
+  France: "Francia",
+  Germany: "Alemania",
+  Ghana: "Ghana",
+  Haiti: "Haiti",
+  Iran: "Iran",
+  Iraq: "Irak",
+  "Ivory Coast": "Costa de Marfil",
+  Japan: "Japon",
+  Jordan: "Jordania",
+  Mexico: "Mexico",
+  Morocco: "Marruecos",
+  Netherlands: "Paises Bajos",
+  "New Zealand": "Nueva Zelanda",
+  Norway: "Noruega",
+  Panama: "Panama",
+  Paraguay: "Paraguay",
+  Portugal: "Portugal",
+  Qatar: "Qatar",
+  "Saudi Arabia": "Arabia Saudita",
+  Scotland: "Escocia",
+  Senegal: "Senegal",
+  "South Africa": "Sudafrica",
+  "South Korea": "Corea del Sur",
+  Spain: "Espana",
+  Sweden: "Suecia",
+  Switzerland: "Suiza",
+  Tunisia: "Tunez",
+  Turkey: "Turquia",
+  "United States": "Estados Unidos",
+  Uruguay: "Uruguay",
+  Uzbekistan: "Uzbekistan"
+};
+
+export function teamDisplayName(team: string) {
+  return teamNamesEs[team] ?? team;
+}
+
 export const teamFlagImages: Record<string, string> = {
   Algeria: "dz",
   Argentina: "ar",
