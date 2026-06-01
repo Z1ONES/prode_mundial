@@ -13,54 +13,66 @@ const credentialsSchema = z.object({
 });
 
 export async function registerAction(_: unknown, formData: FormData) {
-  const parsed = z
-    .object({
-      name: z.string().trim().min(2, "Ingresa tu nombre"),
-      email: credentialsSchema.shape.email,
-      password: credentialsSchema.shape.password
-    })
-    .safeParse(Object.fromEntries(formData));
+  try {
+    const parsed = z
+      .object({
+        name: z.string().trim().min(2, "Ingresa tu nombre"),
+        email: credentialsSchema.shape.email,
+        password: credentialsSchema.shape.password
+      })
+      .safeParse(Object.fromEntries(formData));
 
-  if (!parsed.success) {
-    return { error: parsed.error.errors[0]?.message ?? "Datos invalidos" };
-  }
-
-  const existing = await prisma.user.findUnique({
-    where: { email: parsed.data.email }
-  });
-
-  if (existing) {
-    return { error: "Ya existe un usuario con ese email" };
-  }
-
-  const user = await prisma.user.create({
-    data: {
-      name: parsed.data.name,
-      email: parsed.data.email,
-      passwordHash: await bcrypt.hash(parsed.data.password, 12),
-      role: "USER"
+    if (!parsed.success) {
+      return { error: parsed.error.errors[0]?.message ?? "Datos invalidos" };
     }
-  });
 
-  await createSession(user);
+    const existing = await prisma.user.findUnique({
+      where: { email: parsed.data.email }
+    });
+
+    if (existing) {
+      return { error: "Ya existe un usuario con ese email" };
+    }
+
+    const user = await prisma.user.create({
+      data: {
+        name: parsed.data.name,
+        email: parsed.data.email,
+        passwordHash: await bcrypt.hash(parsed.data.password, 12),
+        role: "USER"
+      }
+    });
+
+    await createSession(user);
+  } catch (error) {
+    console.error("registerAction failed", error);
+    return { error: "No se pudo crear el usuario. Revisa la configuracion de la base." };
+  }
+
   redirect("/");
 }
 
 export async function loginAction(_: unknown, formData: FormData) {
-  const parsed = credentialsSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) {
-    return { error: parsed.error.errors[0]?.message ?? "Datos invalidos" };
+  try {
+    const parsed = credentialsSchema.safeParse(Object.fromEntries(formData));
+    if (!parsed.success) {
+      return { error: parsed.error.errors[0]?.message ?? "Datos invalidos" };
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: parsed.data.email }
+    });
+
+    if (!user || !(await bcrypt.compare(parsed.data.password, user.passwordHash))) {
+      return { error: "Email o password incorrectos" };
+    }
+
+    await createSession(user);
+  } catch (error) {
+    console.error("loginAction failed", error);
+    return { error: "No se pudo iniciar sesion. Revisa la configuracion de la base." };
   }
 
-  const user = await prisma.user.findUnique({
-    where: { email: parsed.data.email }
-  });
-
-  if (!user || !(await bcrypt.compare(parsed.data.password, user.passwordHash))) {
-    return { error: "Email o password incorrectos" };
-  }
-
-  await createSession(user);
   redirect("/");
 }
 
