@@ -1,13 +1,15 @@
 :root {
-  --bg: #ffffff;
+  --bg: #fffaf5;
   --panel: #ffffff;
   --ink: #22170f;
   --muted: #7a6658;
   --line: #f0d8c7;
   --accent: #f97316;
   --accent-dark: #c2410c;
+  --accent-soft: #ffedd5;
   --danger: #b42318;
   --soft: #fff3e8;
+  --shadow: 0 18px 42px rgba(154, 52, 18, 0.09);
 }
 
 * {
@@ -18,7 +20,8 @@ body {
   margin: 0;
   min-height: 100vh;
   background:
-    linear-gradient(180deg, #fff7ed 0, #ffffff 280px),
+    radial-gradient(circle at top left, rgba(249, 115, 22, 0.16), transparent 330px),
+    linear-gradient(180deg, #fff7ed 0, #ffffff 330px),
     var(--bg);
   color: var(--ink);
   font-family: Arial, Helvetica, sans-serif;
@@ -34,22 +37,23 @@ input {
 }
 
 .shell {
-  width: min(1120px, calc(100% - 32px));
+  width: min(1180px, calc(100% - 32px));
   margin: 0 auto;
-  padding: 28px 0 48px;
+  padding: 22px 0 52px;
 }
 
 .topbar {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: flex-start;
-  gap: 18px;
-  margin-bottom: 28px;
-  background: var(--panel);
+  gap: 20px;
+  margin-bottom: 22px;
+  background: rgba(255, 255, 255, 0.88);
   border: 1px solid var(--line);
   border-radius: 8px;
-  padding: 18px;
-  box-shadow: 0 16px 40px rgba(194, 65, 12, 0.08);
+  padding: 16px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(12px);
 }
 
 .hero-copy {
@@ -59,12 +63,12 @@ input {
 }
 
 .hero-image {
-  width: 92px;
-  height: 92px;
+  width: 86px;
+  height: 86px;
   object-fit: cover;
   border-radius: 8px;
   border: 1px solid var(--line);
-  box-shadow: 0 12px 24px rgba(194, 65, 12, 0.14);
+  box-shadow: 0 14px 26px rgba(194, 65, 12, 0.16);
 }
 
 .brand {
@@ -74,7 +78,9 @@ input {
 
 .brand h1 {
   margin: 0;
-  font-size: clamp(28px, 4vw, 44px);
+  font-size: clamp(30px, 4vw, 48px);
+  letter-spacing: 0;
+  line-height: 0.95;
 }
 
 .brand p,
@@ -92,7 +98,7 @@ input {
 
 .grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 330px;
+  grid-template-columns: minmax(0, 1fr) 320px;
   gap: 20px;
   align-items: start;
 }
@@ -104,11 +110,11 @@ input {
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 8px;
-  box-shadow: 0 16px 40px rgba(194, 65, 12, 0.07);
+  box-shadow: var(--shadow);
 }
 
 .panel {
-  padding: 20px;
+  padding: 18px;
 }
 
 .panel h2,
@@ -131,6 +137,8 @@ input {
   justify-content: space-between;
   gap: 14px;
   margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
 }
 
 .section-head h2 {
@@ -145,8 +153,9 @@ input {
 .group-section {
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fffaf5;
+  background: #ffffff;
   overflow: hidden;
+  box-shadow: 0 8px 22px rgba(154, 52, 18, 0.05);
 }
 
 .group-heading {
@@ -155,7 +164,7 @@ input {
   justify-content: space-between;
   gap: 12px;
   padding: 14px 16px;
-  background: var(--soft);
+  background: linear-gradient(135deg, #fff3e8 0%, #ffffff 100%);
   border-bottom: 1px solid var(--line);
 }
 
@@ -169,6 +178,7 @@ input {
   display: grid;
   gap: 14px;
   padding: 14px;
+  background: #fffdfa;
 }
 
 .date-section {
@@ -181,6 +191,7 @@ input {
   color: var(--muted);
   font-size: 14px;
   text-transform: capitalize;
+  padding-left: 2px;
 }
 
 .match-list {
@@ -190,22 +201,37 @@ input {
 
 .match-card {
   display: grid;
-  grid-template-columns: 120px minmax(0, 1fr);
+  grid-template-columns: 112px minmax(0, 1fr);
   gap: 14px;
   padding: 14px;
+  box-shadow: none;
+  transition:
+    border-color 140ms ease,
+    transform 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.match-card:hover {
+  border-color: rgba(249, 115, 22, 0.42);
+  box-shadow: 0 10px 26px rgba(154, 52, 18, 0.08);
+  transform: translateY(-1px);
 }
 
 .match-time {
   display: grid;
   align-content: start;
   gap: 5px;
-  color: var(--muted);
+  color: var(--accent-dark);
   font-size: 13px;
+  padding: 9px 10px;
+  border-radius: 8px;
+  background: var(--soft);
 }
 
 .match-time strong {
   color: var(--ink);
   font-size: 15px;
+  line-height: 1.15;
 }
 
 .match-main {
@@ -221,7 +247,7 @@ input {
 
 .match-title {
   margin: 0 0 4px;
-  font-weight: 700;
+  font-weight: 800;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -233,11 +259,12 @@ input {
   align-items: center;
   gap: 6px;
   vertical-align: middle;
+  min-width: 0;
 }
 
 .flag-img {
-  width: 24px;
-  height: 16px;
+  width: 26px;
+  height: 18px;
   border-radius: 2px;
   object-fit: cover;
   box-shadow: 0 0 0 1px rgba(34, 23, 15, 0.12);
@@ -246,6 +273,8 @@ input {
 .versus {
   color: var(--muted);
   font-weight: 700;
+  font-size: 13px;
+  text-transform: uppercase;
 }
 
 .badge {
@@ -258,6 +287,7 @@ input {
   color: var(--accent-dark);
   font-size: 13px;
   white-space: nowrap;
+  font-weight: 700;
 }
 
 .form-row {
@@ -293,7 +323,7 @@ input {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 6px;
-  padding: 11px 12px;
+  padding: 10px 11px;
   background: #fff;
   color: var(--ink);
 }
@@ -316,15 +346,21 @@ input:focus {
   cursor: pointer;
   text-decoration: none;
   font-weight: 700;
+  transition:
+    background 140ms ease,
+    transform 140ms ease,
+    box-shadow 140ms ease;
 }
 
 .button:hover {
   background: var(--accent-dark);
+  box-shadow: 0 8px 18px rgba(194, 65, 12, 0.18);
+  transform: translateY(-1px);
 }
 
 .button.secondary {
-  background: #fff3e8;
-  color: var(--ink);
+  background: var(--accent-soft);
+  color: var(--accent-dark);
 }
 
 .button.ghost {
@@ -350,8 +386,18 @@ input:focus {
 .leaderboard th,
 .leaderboard td {
   border-bottom: 1px solid var(--line);
-  padding: 10px 8px;
+  padding: 12px 8px;
   text-align: left;
+}
+
+.leaderboard th {
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.leaderboard tbody tr:first-child td {
+  background: #fffaf5;
 }
 
 .leaderboard th:last-child,
@@ -364,11 +410,14 @@ input:focus {
   display: grid;
   place-items: center;
   padding: 24px;
+  background:
+    radial-gradient(circle at top, rgba(249, 115, 22, 0.14), transparent 340px),
+    #fffaf5;
 }
 
 .auth-box {
   width: min(440px, 100%);
-  padding: 26px;
+  padding: 28px;
 }
 
 .auth-box h1 {
@@ -423,6 +472,10 @@ input:focus {
     flex-direction: column;
   }
 
+  .topbar {
+    gap: 14px;
+  }
+
   .hero-image {
     width: 74px;
     height: 74px;
@@ -441,6 +494,12 @@ input:focus {
 
   .match-card {
     grid-template-columns: 1fr;
+  }
+
+  .match-time {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
 
   .standings-panel {
