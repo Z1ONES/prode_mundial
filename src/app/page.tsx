@@ -44,19 +44,29 @@ export default async function HomePage({
     getLeaderboard()
   ]);
 
-  const matchesByDay = matches.reduce<Array<{ day: string; matches: typeof matches }>>(
-    (days, match) => {
-      const day = formatDay(match.startsAt);
-      const current = days[days.length - 1];
-      if (current?.day === day) {
-        current.matches.push(match);
-      } else {
-        days.push({ day, matches: [match] });
-      }
-      return days;
-    },
-    []
-  );
+  const matchesByGroup = matches.reduce<
+    Array<{ group: string; days: Array<{ day: string; matches: typeof matches }> }>
+  >((groups, match) => {
+    const group = match.phase;
+    const day = formatDay(match.startsAt);
+    let currentGroup = groups.find((item) => item.group === group);
+
+    if (!currentGroup) {
+      currentGroup = { group, days: [] };
+      groups.push(currentGroup);
+    }
+
+    const currentDay = currentGroup.days[currentGroup.days.length - 1];
+    if (currentDay?.day === day) {
+      currentDay.matches.push(match);
+    } else {
+      currentGroup.days.push({ day, matches: [match] });
+    }
+
+    return groups;
+  }, []);
+
+  matchesByGroup.sort((a, b) => a.group.localeCompare(b.group, "es-AR"));
 
   return (
     <main className="shell">
@@ -107,93 +117,105 @@ export default async function HomePage({
             <p className="muted">Todavia no hay partidos cargados.</p>
           ) : (
             <div className="schedule">
-              {matchesByDay.map((group) => (
-                <section className="date-section" key={group.day}>
-                  <h3>{group.day}</h3>
-                  <div className="match-list">
-                    {group.matches.map((match) => {
-                      const prediction = match.predictions[0];
-                      const locked = match.startsAt <= new Date();
-                      const hasResult = match.homeGoals !== null && match.awayGoals !== null;
-                      const points = prediction
-                        ? scorePrediction({
-                            predictedHome: prediction.homeGoals,
-                            predictedAway: prediction.awayGoals,
-                            actualHome: match.homeGoals,
-                            actualAway: match.awayGoals
-                          })
-                        : 0;
+              {matchesByGroup.map((group) => (
+                <section className="group-section" key={group.group}>
+                  <div className="group-heading">
+                    <h3>{group.group}</h3>
+                    <span className="badge">
+                      {group.days.reduce((total, day) => total + day.matches.length, 0)} partidos
+                    </span>
+                  </div>
+                  <div className="group-days">
+                    {group.days.map((day) => (
+                      <section className="date-section" key={`${group.group}-${day.day}`}>
+                        <h4>{day.day}</h4>
+                        <div className="match-list">
+                          {day.matches.map((match) => {
+                            const prediction = match.predictions[0];
+                            const locked = match.startsAt <= new Date();
+                            const hasResult = match.homeGoals !== null && match.awayGoals !== null;
+                            const points = prediction
+                              ? scorePrediction({
+                                  predictedHome: prediction.homeGoals,
+                                  predictedAway: prediction.awayGoals,
+                                  actualHome: match.homeGoals,
+                                  actualAway: match.awayGoals
+                                })
+                              : 0;
 
-                      return (
-                        <article className="match-card" key={match.id}>
-                          <div className="match-time">
-                            <strong>{formatTime(match.startsAt)}</strong>
-                            <span>{match.phase}</span>
-                          </div>
-                          <div className="match-main">
-                            <div className="match-head">
-                              <div>
-                                <p className="match-title">
-                                  <TeamName team={match.homeTeam} />{" "}
-                                  <span className="versus">vs</span>{" "}
-                                  <TeamName team={match.awayTeam} />
-                                </p>
-                                <p className="muted">
-                                  Tu pronostico:{" "}
-                                  {prediction
-                                    ? `${prediction.homeGoals}-${prediction.awayGoals}`
-                                    : "sin cargar"}
-                                </p>
-                              </div>
-                              <span className="badge">
-                                {hasResult
-                                  ? `${match.homeGoals}-${match.awayGoals} - ${points} pts`
-                                  : locked
-                                    ? "Cerrado"
-                                    : "Abierto"}
-                              </span>
-                            </div>
+                            return (
+                              <article className="match-card" key={match.id}>
+                                <div className="match-time">
+                                  <strong>{formatTime(match.startsAt)}</strong>
+                                  <span>{day.day}</span>
+                                </div>
+                                <div className="match-main">
+                                  <div className="match-head">
+                                    <div>
+                                      <p className="match-title">
+                                        <TeamName team={match.homeTeam} />{" "}
+                                        <span className="versus">vs</span>{" "}
+                                        <TeamName team={match.awayTeam} />
+                                      </p>
+                                      <p className="muted">
+                                        Tu pronostico:{" "}
+                                        {prediction
+                                          ? `${prediction.homeGoals}-${prediction.awayGoals}`
+                                          : "sin cargar"}
+                                      </p>
+                                    </div>
+                                    <span className="badge">
+                                      {hasResult
+                                        ? `${match.homeGoals}-${match.awayGoals} - ${points} pts`
+                                        : locked
+                                          ? "Cerrado"
+                                          : "Abierto"}
+                                    </span>
+                                  </div>
 
-                            {!locked ? (
-                              <form action={savePredictionAction} className="form-row">
-                                <input type="hidden" name="matchId" value={match.id} />
-                                <div className="field score-field">
-                                  <label htmlFor={`home-${match.id}`}>
-                                    <TeamName team={match.homeTeam} />
-                                  </label>
-                                  <input
-                                    id={`home-${match.id}`}
-                                    name="homeGoals"
-                                    type="number"
-                                    min="0"
-                                    max="99"
-                                    defaultValue={prediction?.homeGoals ?? ""}
-                                    required
-                                  />
+                                  {!locked ? (
+                                    <form action={savePredictionAction} className="form-row">
+                                      <input type="hidden" name="matchId" value={match.id} />
+                                      <div className="field score-field">
+                                        <label htmlFor={`home-${match.id}`}>
+                                          <TeamName team={match.homeTeam} />
+                                        </label>
+                                        <input
+                                          id={`home-${match.id}`}
+                                          name="homeGoals"
+                                          type="number"
+                                          min="0"
+                                          max="99"
+                                          defaultValue={prediction?.homeGoals ?? ""}
+                                          required
+                                        />
+                                      </div>
+                                      <div className="field score-field">
+                                        <label htmlFor={`away-${match.id}`}>
+                                          <TeamName team={match.awayTeam} />
+                                        </label>
+                                        <input
+                                          id={`away-${match.id}`}
+                                          name="awayGoals"
+                                          type="number"
+                                          min="0"
+                                          max="99"
+                                          defaultValue={prediction?.awayGoals ?? ""}
+                                          required
+                                        />
+                                      </div>
+                                      <button className="button" type="submit">
+                                        Guardar
+                                      </button>
+                                    </form>
+                                  ) : null}
                                 </div>
-                                <div className="field score-field">
-                                  <label htmlFor={`away-${match.id}`}>
-                                    <TeamName team={match.awayTeam} />
-                                  </label>
-                                  <input
-                                    id={`away-${match.id}`}
-                                    name="awayGoals"
-                                    type="number"
-                                    min="0"
-                                    max="99"
-                                    defaultValue={prediction?.awayGoals ?? ""}
-                                    required
-                                  />
-                                </div>
-                                <button className="button" type="submit">
-                                  Guardar
-                                </button>
-                              </form>
-                            ) : null}
-                          </div>
-                        </article>
-                      );
-                    })}
+                              </article>
+                            );
+                          })}
+                        </div>
+                      </section>
+                    ))}
                   </div>
                 </section>
               ))}

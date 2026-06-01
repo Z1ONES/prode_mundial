@@ -139,7 +139,36 @@ input {
 
 .schedule {
   display: grid;
-  gap: 22px;
+  gap: 18px;
+}
+
+.group-section {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fffaf5;
+  overflow: hidden;
+}
+
+.group-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--soft);
+  border-bottom: 1px solid var(--line);
+}
+
+.group-heading h3 {
+  margin: 0;
+  color: var(--accent-dark);
+  font-size: 18px;
+}
+
+.group-days {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
 }
 
 .date-section {
@@ -147,15 +176,10 @@ input {
   gap: 10px;
 }
 
-.date-section h3 {
-  position: sticky;
-  top: 0;
-  z-index: 1;
+.date-section h4 {
   margin: 0;
-  padding: 8px 0;
-  background: linear-gradient(180deg, #ffffff 70%, rgba(255, 255, 255, 0.88));
-  color: var(--accent-dark);
-  font-size: 16px;
+  color: var(--muted);
+  font-size: 14px;
   text-transform: capitalize;
 }
 
@@ -419,8 +443,7 @@ input:focus {
     grid-template-columns: 1fr;
   }
 
-  .standings-panel,
-  .date-section h3 {
+  .standings-panel {
     position: static;
   }
 }
