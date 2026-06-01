@@ -1,0 +1,13 @@
+node_modules
+.pnpm-store
+.next
+dist
+coverage
+*.log
+*.tsbuildinfo
+.env
+.env*.local
+*.db
+*.db-journal
+*.sqlite
+*.sqlite-journal
