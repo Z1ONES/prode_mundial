@@ -27,7 +27,7 @@ function formatDate(date: Date) {
 export default async function AdminPage({
   searchParams
 }: {
-  searchParams?: { error?: string };
+  searchParams?: { error?: string; seeded?: string; updated?: string };
 }) {
   const user = await requireAdmin();
   const matches = await prisma.match.findMany({
@@ -72,9 +72,21 @@ export default async function AdminPage({
         <div className="error">Revisa los datos del formulario. Hay campos invalidos.</div>
       ) : null}
 
+      {searchParams?.seeded ? (
+        <div className="success">
+          Fixture cargado: {searchParams.seeded} partidos nuevos, {searchParams.updated ?? 0}{" "}
+          actualizados.
+        </div>
+      ) : null}
+
       <section className="admin-grid">
         <aside className="panel">
           <h2>Nuevo partido</h2>
+          <form action="/admin/seed-fixtures" method="post" style={{ marginBottom: 18 }}>
+            <button className="button full secondary" type="submit">
+              Cargar fixture de grupos
+            </button>
+          </form>
           <form action={createMatchAction} className="admin-form">
             <div className="field">
               <label htmlFor="phase">Fase</label>
