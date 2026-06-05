@@ -3,6 +3,7 @@ import { scorePrediction } from "@/lib/scoring";
 
 export async function getLeaderboard() {
   const users = await prisma.user.findMany({
+    where: { email: { not: "admin@prode.local" } },
     orderBy: { name: "asc" },
     include: {
       predictions: {

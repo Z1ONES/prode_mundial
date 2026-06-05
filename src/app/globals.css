@@ -745,3 +745,80 @@ input:focus {
     grid-template-columns: 1fr 1fr auto;
   }
 }
+
+
+/* ==== SPORTS/FANTASY REDESIGN ==== */
+:root{
+ --radius-xl:28px;
+}
+body::before{
+content:"";
+position:fixed; inset:0;
+background:
+radial-gradient(circle at top, rgba(249,115,22,.14), transparent 30%),
+linear-gradient(180deg, rgba(249,115,22,.08), transparent 18%);
+pointer-events:none;
+}
+.panel,.card,.match-card,.auth-box,.user-status-card{
+ border-radius:var(--radius-xl)!important;
+ border:1px solid rgba(249,115,22,.12)!important;
+ background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.025))!important;
+ box-shadow:0 22px 60px rgba(0,0,0,.34)!important;
+}
+.user-status-card{
+ overflow:hidden;
+ position:relative;
+ background:
+ radial-gradient(circle at top right, rgba(249,115,22,.18), transparent 35%),
+ linear-gradient(135deg, rgba(249,115,22,.22), rgba(255,255,255,.03)) !important;
+}
+.user-status-card h2{
+ font-size:clamp(2.5rem,9vw,4.4rem)!important;
+ font-weight:900!important;
+ letter-spacing:-.06em;
+}
+.points-pill{
+ border-radius:22px!important;
+ padding:16px 18px!important;
+ background:rgba(249,115,22,.14)!important;
+ border:1px solid rgba(249,115,22,.22)!important;
+}
+.score-readout{
+ font-size:3rem!important;
+ font-weight:900!important;
+ line-height:1;
+ letter-spacing:-.08em;
+}
+.score-buttons{
+ display:flex; gap:8px; flex-wrap:wrap;
+ justify-content:center;
+}
+.score-choice{
+ min-width:48px!important;
+ min-height:48px!important;
+ border-radius:16px!important;
+ border:1px solid rgba(255,255,255,.1)!important;
+ background:rgba(255,255,255,.04)!important;
+ font-weight:800;
+}
+.score-choice[aria-pressed="true"]{
+ background:linear-gradient(180deg,#f97316,#c2410c)!important;
+ transform:translateY(-1px);
+ box-shadow:0 10px 25px rgba(249,115,22,.35);
+}
+.match-card{
+ padding:18px!important;
+}
+.topbar{
+ border-bottom:1px solid rgba(249,115,22,.12)!important;
+ background:rgba(10,10,12,.84)!important;
+ backdrop-filter:blur(22px);
+}
+.hero-image{
+ border-radius:14px!important;
+}
+@media (max-width:768px){
+ .shell{width:min(100% - 14px,1180px)!important;}
+ .brand h1{font-size:1.15rem!important}
+ .panel,.card,.match-card,.user-status-card{padding:16px!important}
+}
