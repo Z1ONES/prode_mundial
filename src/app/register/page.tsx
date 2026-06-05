@@ -10,6 +10,7 @@ export default function RegisterPage() {
   return (
     <main className="auth-page">
       <section className="auth-box">
+        <span className="eyebrow">LT Training Center</span>
         <h1>Crear cuenta</h1>
         <p className="muted">Registrate para participar del prode.</p>
         {state?.error ? <div className="error">{state.error}</div> : null}
@@ -38,7 +39,7 @@ export default function RegisterPage() {
           </button>
         </form>
         <p className="muted" style={{ marginTop: 16 }}>
-          ¿Ya tenes cuenta? <Link href="/login">Entrar</Link>
+          Ya tenes cuenta? <Link href="/login">Entrar</Link>
         </p>
       </section>
     </main>

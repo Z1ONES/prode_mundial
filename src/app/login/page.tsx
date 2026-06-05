@@ -10,6 +10,7 @@ export default function LoginPage() {
   return (
     <main className="auth-page">
       <section className="auth-box">
+        <span className="eyebrow">LT Training Center</span>
         <h1>Entrar al prode</h1>
         <p className="muted">Usa tu email y password para cargar tus pronosticos.</p>
         {state?.error ? <div className="error">{state.error}</div> : null}
@@ -33,7 +34,7 @@ export default function LoginPage() {
           </button>
         </form>
         <p className="muted" style={{ marginTop: 16 }}>
-          ¿No tenes cuenta? <Link href="/register">Registrate</Link>
+          No tenes cuenta? <Link href="/register">Registrate</Link>
         </p>
       </section>
     </main>

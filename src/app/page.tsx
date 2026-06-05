@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { ScorePicker } from "@/components/score-picker";
 import { TeamName } from "@/components/team-name";
 import { logoutAction, savePredictionAction } from "@/app/actions";
 import { getLeaderboard } from "@/lib/leaderboard";
@@ -24,6 +25,13 @@ function formatTime(date: Date) {
     timeZone: "America/Argentina/Buenos_Aires",
     timeZoneName: "shortOffset"
   }).format(date);
+}
+
+function podiumLabel(position: number) {
+  if (position === 1) return "1";
+  if (position === 2) return "2";
+  if (position === 3) return "3";
+  return position.toString();
 }
 
 export default async function HomePage({
@@ -67,6 +75,14 @@ export default async function HomePage({
   }, []);
 
   matchesByGroup.sort((a, b) => a.group.localeCompare(b.group, "es-AR"));
+  const now = new Date();
+  const today = formatDay(now);
+  const userRank = leaderboard.find((row) => row.id === user.id);
+  const upcomingToday = matches.filter((match) => match.startsAt > now && formatDay(match.startsAt) === today);
+  const upcomingMatches = upcomingToday.length
+    ? upcomingToday.slice(0, 4)
+    : matches.filter((match) => match.startsAt > now).slice(0, 4);
+  const topFive = leaderboard.slice(0, 5);
 
   return (
     <main className="shell">
@@ -81,8 +97,9 @@ export default async function HomePage({
         />
         <div className="hero-copy">
           <div className="brand">
+            <span className="eyebrow">LT Training Center</span>
             <h1>Prode Mundial</h1>
-            <p>Hola, {user.name}. Carga tus pronosticos antes de que arranque cada partido.</p>
+            <p>Hola, {user.name}</p>
           </div>
           <nav className="nav">
             {user.role === "ADMIN" ? (
@@ -103,11 +120,137 @@ export default async function HomePage({
         <div className="error">Ese partido ya empezo y el pronostico esta cerrado.</div>
       ) : null}
 
-      <section className="grid">
-        <div className="panel">
+      <section className="mobile-stack">
+        <section className="user-status-card">
+          <div>
+            <span className="eyebrow">Tu estado</span>
+            <h2>#{userRank?.position ?? "-"} en el ranking</h2>
+            <p className="muted">Movimiento: sin historial</p>
+          </div>
+          <div className="points-pill">
+            <strong>{userRank?.points ?? 0}</strong>
+            <span>pts</span>
+          </div>
+          <a className="ranking-link" href="#ranking">
+            Ver ranking
+          </a>
+        </section>
+
+        <section className="panel priority-panel">
+          <div className="section-head compact-head">
+            <div>
+              <span className="eyebrow">Ahora</span>
+              <h2>Proximos partidos</h2>
+              <p className="muted">
+                {upcomingToday.length ? "Pendientes de hoy" : "Los proximos disponibles"}
+              </p>
+            </div>
+          </div>
+          {upcomingMatches.length === 0 ? (
+            <p className="muted">No hay partidos abiertos por ahora.</p>
+          ) : (
+            <div className="match-list priority-list">
+              {upcomingMatches.map((match) => {
+                const prediction = match.predictions[0];
+
+                return (
+                  <article className="match-card priority-match" key={match.id}>
+                    <div className="match-time">
+                      <strong>{formatTime(match.startsAt)}</strong>
+                      <span>{formatDay(match.startsAt)}</span>
+                    </div>
+                    <div className="match-main">
+                      <div className="match-head">
+                        <div>
+                          <p className="match-title">
+                            <TeamName team={match.homeTeam} /> <span className="versus">vs</span>{" "}
+                            <TeamName team={match.awayTeam} />
+                          </p>
+                          <p className="muted">
+                            Tu pronostico:{" "}
+                            {prediction
+                              ? `${prediction.homeGoals}-${prediction.awayGoals}`
+                              : "sin cargar"}
+                          </p>
+                        </div>
+                        <span className="badge badge-open">Abierto</span>
+                      </div>
+                      <form action={savePredictionAction} className="score-form">
+                        <input type="hidden" name="matchId" value={match.id} />
+                        <ScorePicker
+                          id={`quick-home-${match.id}`}
+                          name="homeGoals"
+                          defaultValue={prediction?.homeGoals ?? 0}
+                          required
+                        >
+                          <TeamName team={match.homeTeam} />
+                        </ScorePicker>
+                        <ScorePicker
+                          id={`quick-away-${match.id}`}
+                          name="awayGoals"
+                          defaultValue={prediction?.awayGoals ?? 0}
+                          required
+                        >
+                          <TeamName team={match.awayTeam} />
+                        </ScorePicker>
+                        <button className="button full" type="submit">
+                          Guardar pronostico
+                        </button>
+                      </form>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        <aside className="panel standings-panel" id="ranking">
+          <div className="section-head compact-head">
+            <div>
+              <span className="eyebrow">Competencia</span>
+              <h2>Top 5</h2>
+              <p className="muted">Ranking en vivo</p>
+            </div>
+          </div>
+          <div className="leaderboard-list">
+            {topFive.map((row) => (
+              <article
+                className={`leaderboard-card ${row.id === user.id ? "is-current-user" : ""} ${
+                  row.position <= 3 ? "is-podium" : ""
+                }`}
+                key={row.id}
+              >
+                <span className="rank-number">{podiumLabel(row.position)}</span>
+                <div>
+                  <strong>{row.name}</strong>
+                  <p className="muted">
+                    {row.exacts} exactos - {row.predictions} pronosticos
+                  </p>
+                </div>
+                <span className="rank-points">{row.points}</span>
+              </article>
+            ))}
+            {userRank && !topFive.some((row) => row.id === user.id) ? (
+              <article className="leaderboard-card is-current-user">
+                <span className="rank-number">{userRank.position}</span>
+                <div>
+                  <strong>{userRank.name}</strong>
+                  <p className="muted">
+                    {userRank.exacts} exactos - {userRank.predictions} pronosticos
+                  </p>
+                </div>
+                <span className="rank-points">{userRank.points}</span>
+              </article>
+            ) : null}
+          </div>
+        </aside>
+
+        <section className="panel full-schedule">
           <div className="section-head">
             <div>
-              <h2>Partidos</h2>
+              <span className="eyebrow">Fixture</span>
+              <h2>Todos los partidos</h2>
               <p className="muted">Horarios en Argentina (GMT-3)</p>
             </div>
             <span className="badge">{matches.length} partidos</span>
@@ -164,7 +307,11 @@ export default async function HomePage({
                                           : "sin cargar"}
                                       </p>
                                     </div>
-                                    <span className="badge">
+                                    <span
+                                      className={`badge ${
+                                        hasResult ? "badge-result" : locked ? "badge-locked" : "badge-open"
+                                      }`}
+                                    >
                                       {hasResult
                                         ? `${match.homeGoals}-${match.awayGoals} - ${points} pts`
                                         : locked
@@ -174,36 +321,24 @@ export default async function HomePage({
                                   </div>
 
                                   {!locked ? (
-                                    <form action={savePredictionAction} className="form-row">
+                                    <form action={savePredictionAction} className="score-form compact-score-form">
                                       <input type="hidden" name="matchId" value={match.id} />
-                                      <div className="field score-field">
-                                        <label htmlFor={`home-${match.id}`}>
-                                          <TeamName team={match.homeTeam} />
-                                        </label>
-                                        <input
-                                          id={`home-${match.id}`}
-                                          name="homeGoals"
-                                          type="number"
-                                          min="0"
-                                          max="99"
-                                          defaultValue={prediction?.homeGoals ?? ""}
-                                          required
-                                        />
-                                      </div>
-                                      <div className="field score-field">
-                                        <label htmlFor={`away-${match.id}`}>
-                                          <TeamName team={match.awayTeam} />
-                                        </label>
-                                        <input
-                                          id={`away-${match.id}`}
-                                          name="awayGoals"
-                                          type="number"
-                                          min="0"
-                                          max="99"
-                                          defaultValue={prediction?.awayGoals ?? ""}
-                                          required
-                                        />
-                                      </div>
+                                      <ScorePicker
+                                        id={`home-${match.id}`}
+                                        name="homeGoals"
+                                        defaultValue={prediction?.homeGoals ?? 0}
+                                        required
+                                      >
+                                        <TeamName team={match.homeTeam} />
+                                      </ScorePicker>
+                                      <ScorePicker
+                                        id={`away-${match.id}`}
+                                        name="awayGoals"
+                                        defaultValue={prediction?.awayGoals ?? 0}
+                                        required
+                                      >
+                                        <TeamName team={match.awayTeam} />
+                                      </ScorePicker>
                                       <button className="button" type="submit">
                                         Guardar
                                       </button>
@@ -221,35 +356,7 @@ export default async function HomePage({
               ))}
             </div>
           )}
-        </div>
-
-        <aside className="panel standings-panel">
-          <h2>Tabla</h2>
-          <table className="leaderboard">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Usuario</th>
-                <th>Pts</th>
-              </tr>
-            </thead>
-            <tbody>
-              {leaderboard.map((row) => (
-                <tr key={row.id}>
-                  <td>{row.position}</td>
-                  <td>
-                    {row.name}
-                    <br />
-                    <span className="muted">
-                      {row.exacts} exactos - {row.predictions} pronosticos
-                    </span>
-                  </td>
-                  <td>{row.points}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </aside>
+        </section>
       </section>
     </main>
   );
