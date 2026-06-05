@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { ScorePicker } from "@/components/score-picker";
 import { createMatchAction, logoutAction, saveResultAction } from "@/app/actions";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -52,6 +53,7 @@ export default async function AdminPage({
         />
         <div className="hero-copy">
           <div className="brand">
+            <span className="eyebrow">LT Training Center</span>
             <h1>Panel admin</h1>
             <p>Sesion de {user.name}. Carga partidos y resultados oficiales.</p>
           </div>
@@ -141,38 +143,28 @@ export default async function AdminPage({
                         : "Sin resultado"}
                     </span>
                   </div>
-                  <form action={saveResultAction} className="compact-row" style={{ marginTop: 14 }}>
+                  <form action={saveResultAction} className="score-form admin-score-form">
                     <input type="hidden" name="matchId" value={match.id} />
-                    <div className="field">
+                    <div className="field result-helper">
                       <label>Resultado oficial</label>
                       <span className="muted">Deja ambos vacios para borrar resultado</span>
                     </div>
-                    <div className="field">
-                      <label htmlFor={`home-result-${match.id}`}>
-                        <TeamName team={match.homeTeam} />
-                      </label>
-                      <input
-                        id={`home-result-${match.id}`}
-                        name="homeGoals"
-                        type="number"
-                        min="0"
-                        max="99"
-                        defaultValue={match.homeGoals ?? ""}
-                      />
-                    </div>
-                    <div className="field">
-                      <label htmlFor={`away-result-${match.id}`}>
-                        <TeamName team={match.awayTeam} />
-                      </label>
-                      <input
-                        id={`away-result-${match.id}`}
-                        name="awayGoals"
-                        type="number"
-                        min="0"
-                        max="99"
-                        defaultValue={match.awayGoals ?? ""}
-                      />
-                    </div>
+                    <ScorePicker
+                      allowEmpty
+                      id={`home-result-${match.id}`}
+                      name="homeGoals"
+                      defaultValue={match.homeGoals}
+                    >
+                      <TeamName team={match.homeTeam} />
+                    </ScorePicker>
+                    <ScorePicker
+                      allowEmpty
+                      id={`away-result-${match.id}`}
+                      name="awayGoals"
+                      defaultValue={match.awayGoals}
+                    >
+                      <TeamName team={match.awayTeam} />
+                    </ScorePicker>
                     <button className="button" type="submit">
                       Guardar
                     </button>
