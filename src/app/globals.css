@@ -822,3 +822,45 @@ pointer-events:none;
  .brand h1{font-size:1.15rem!important}
  .panel,.card,.match-card,.user-status-card{padding:16px!important}
 }
+
+.ranking-page {
+  max-width: 860px;
+}
+
+.ranking-summary {
+  margin-bottom: 14px;
+}
+
+.leaderboard-panel {
+  overflow: hidden;
+}
+
+.full-leaderboard-list {
+  max-height: none;
+}
+
+.compact-ranking-link {
+  margin-top: 12px;
+}
+
+@media (max-width: 479px) {
+  .ranking-page .leaderboard-card {
+    grid-template-columns: 36px minmax(0, 1fr) auto;
+    gap: 8px;
+    min-height: 58px;
+    padding: 9px!important;
+  }
+
+  .ranking-page .rank-number {
+    width: 34px;
+    height: 34px;
+  }
+
+  .ranking-page .rank-points {
+    font-size: 18px;
+  }
+
+  .ranking-page .leaderboard-card .muted {
+    font-size: 12px;
+  }
+}

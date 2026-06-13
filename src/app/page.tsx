@@ -102,6 +102,9 @@ export default async function HomePage({
             <p>Hola, {user.name}</p>
           </div>
           <nav className="nav">
+            <Link className="button secondary" href="/ranking">
+              Ranking
+            </Link>
             {user.role === "ADMIN" ? (
               <Link className="button secondary" href="/admin">
                 Admin
@@ -131,9 +134,9 @@ export default async function HomePage({
             <strong>{userRank?.points ?? 0}</strong>
             <span>pts</span>
           </div>
-          <a className="ranking-link" href="#ranking">
-            Ver ranking
-          </a>
+          <Link className="ranking-link" href="/ranking">
+            Ver ranking completo
+          </Link>
         </section>
 
         <section className="panel priority-panel">
@@ -244,6 +247,9 @@ export default async function HomePage({
               </article>
             ) : null}
           </div>
+          <Link className="ranking-link compact-ranking-link" href="/ranking">
+            Ver tabla completa
+          </Link>
         </aside>
 
         <section className="panel full-schedule">
