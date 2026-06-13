@@ -89,8 +89,8 @@ export default async function HomePage({
       <header className="topbar">
         <Image
           className="hero-image"
-          src="/lt-entrenamiento.jpg"
-          alt="LT Entrenamiento"
+          src="/Logo.png"
+          alt="LT Training Center"
           width={200}
           height={200}
           priority
