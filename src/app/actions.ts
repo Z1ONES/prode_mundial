@@ -76,6 +76,75 @@ export async function loginAction(_: unknown, formData: FormData) {
   redirect("/");
 }
 
+
+export async function requestPasswordResetAction(_: unknown, formData: FormData) {
+  try {
+    const parsed = z
+      .object({
+        email: credentialsSchema.shape.email
+      })
+      .safeParse(Object.fromEntries(formData));
+
+    if (!parsed.success) {
+      return { error: parsed.error.errors[0]?.message ?? "Ingresa un email valido" };
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: parsed.data.email },
+      select: { name: true, email: true }
+    });
+
+    if (!user) {
+      return { error: "No existe un usuario con ese email" };
+    }
+
+    return { email: user.email, name: user.name };
+  } catch (error) {
+    console.error("requestPasswordResetAction failed", error);
+    return { error: "No se pudo validar el usuario. Revisa la configuracion de la base." };
+  }
+}
+
+export async function resetPasswordAction(_: unknown, formData: FormData) {
+  try {
+    const parsed = z
+      .object({
+        email: credentialsSchema.shape.email,
+        password: credentialsSchema.shape.password,
+        confirmPassword: z.string().min(1, "Confirma la nueva password")
+      })
+      .refine((data) => data.password === data.confirmPassword, {
+        message: "Las passwords no coinciden",
+        path: ["confirmPassword"]
+      })
+      .safeParse(Object.fromEntries(formData));
+
+    if (!parsed.success) {
+      return { error: parsed.error.errors[0]?.message ?? "Datos invalidos" };
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: parsed.data.email },
+      select: { id: true }
+    });
+
+    if (!user) {
+      return { error: "No existe un usuario con ese email" };
+    }
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordHash: await bcrypt.hash(parsed.data.password, 12)
+      }
+    });
+  } catch (error) {
+    console.error("resetPasswordAction failed", error);
+    return { error: "No se pudo cambiar la password. Revisa la configuracion de la base." };
+  }
+
+  redirect("/login?reset=success");
+}
 export async function logoutAction() {
   clearSession();
   redirect("/login");
