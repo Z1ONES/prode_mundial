@@ -7,6 +7,23 @@ import { getLeaderboard } from "@/lib/leaderboard";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { scorePrediction } from "@/lib/scoring";
+import { teamDisplayName } from "@/lib/world-cup";
+
+function normalizeSearch(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("es-AR")
+    .trim();
+}
+
+function teamMatchesSearch(team: string, search: string) {
+  if (!search) return true;
+
+  return [team, teamDisplayName(team)].some((name) =>
+    normalizeSearch(name).includes(search)
+  );
+}
 
 function formatDay(date: Date) {
   return new Intl.DateTimeFormat("es-AR", {
@@ -37,7 +54,7 @@ function podiumLabel(position: number) {
 export default async function HomePage({
   searchParams
 }: {
-  searchParams?: { error?: string };
+  searchParams?: { error?: string; pais?: string };
 }) {
   const user = await requireUser();
   const [matches, leaderboard] = await Promise.all([
@@ -52,7 +69,17 @@ export default async function HomePage({
     getLeaderboard()
   ]);
 
-  const matchesByGroup = matches.reduce<
+  const countryQuery = searchParams?.pais?.trim() ?? "";
+  const normalizedCountryQuery = normalizeSearch(countryQuery);
+  const filteredMatches = normalizedCountryQuery
+    ? matches.filter(
+        (match) =>
+          teamMatchesSearch(match.homeTeam, normalizedCountryQuery) ||
+          teamMatchesSearch(match.awayTeam, normalizedCountryQuery)
+      )
+    : matches;
+
+  const matchesByGroup = filteredMatches.reduce<
     Array<{ group: string; days: Array<{ day: string; matches: typeof matches }> }>
   >((groups, match) => {
     const group = match.phase;
@@ -252,18 +279,45 @@ export default async function HomePage({
           </Link>
         </aside>
 
-        <section className="panel full-schedule">
+        <section className="panel full-schedule" id="fixture">
           <div className="section-head">
             <div>
               <span className="eyebrow">Fixture</span>
-              <h2>Todos los partidos</h2>
+              <h2>{countryQuery ? `Partidos de ${countryQuery}` : "Todos los partidos"}</h2>
               <p className="muted">Horarios en Argentina (GMT-3)</p>
             </div>
-            <span className="badge">{matches.length} partidos</span>
+            <span className="badge">{filteredMatches.length} partidos</span>
           </div>
+
+          <form className="country-search" method="get" action="/#fixture">
+            <label htmlFor="country-search">Buscar por pais</label>
+            <div className="country-search-controls">
+              <input
+                id="country-search"
+                name="pais"
+                type="search"
+                defaultValue={countryQuery}
+                placeholder="Ej: Argentina, Brasil, Japon..."
+                autoComplete="off"
+              />
+              <button className="button" type="submit">
+                Buscar
+              </button>
+              {countryQuery ? (
+                <Link className="button secondary" href="/#fixture">
+                  Ver todos
+                </Link>
+              ) : null}
+            </div>
+          </form>
 
           {matches.length === 0 ? (
             <p className="muted">Todavia no hay partidos cargados.</p>
+          ) : filteredMatches.length === 0 ? (
+            <div className="empty-search">
+              <p>No encontramos partidos para &quot;{countryQuery}&quot;.</p>
+              <span className="muted">Proba con el nombre completo del pais.</span>
+            </div>
           ) : (
             <div className="schedule">
               {matchesByGroup.map((group) => (

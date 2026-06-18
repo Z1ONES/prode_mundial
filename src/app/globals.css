@@ -239,6 +239,69 @@ button {
   gap: 10px;
 }
 
+.country-search {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.country-search label {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.country-search-controls {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.country-search input {
+  min-width: 0;
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+  outline: none;
+  background: var(--surface-2);
+  color: #fff;
+}
+
+.country-search input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.country-search input::placeholder {
+  color: var(--muted);
+}
+
+.empty-search {
+  padding: 24px 14px;
+  border: 1px dashed var(--line-strong);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.empty-search p {
+  margin: 0 0 5px;
+  font-weight: 900;
+}
+
+@media (max-width: 479px) {
+  .country-search-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .country-search input {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+}
+
 .group-section {
   border: 1px solid var(--line);
   border-radius: 8px;
