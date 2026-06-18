@@ -242,7 +242,10 @@ button {
 .country-search {
   display: grid;
   gap: 8px;
-  margin-bottom: 14px;
+}
+
+.country-search-panel {
+  padding: 12px 14px;
 }
 
 .country-search label {

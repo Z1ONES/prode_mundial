@@ -166,6 +166,30 @@ export default async function HomePage({
           </Link>
         </section>
 
+        <section className="panel country-search-panel">
+          <form className="country-search" method="get" action="/#fixture">
+            <label htmlFor="country-search">Buscar partidos por pais</label>
+            <div className="country-search-controls">
+              <input
+                id="country-search"
+                name="pais"
+                type="search"
+                defaultValue={countryQuery}
+                placeholder="Ej: Argentina, Brasil, Japon..."
+                autoComplete="off"
+              />
+              <button className="button" type="submit">
+                Buscar
+              </button>
+              {countryQuery ? (
+                <Link className="button secondary" href="/#fixture">
+                  Ver todos
+                </Link>
+              ) : null}
+            </div>
+          </form>
+        </section>
+
         <section className="panel priority-panel">
           <div className="section-head compact-head">
             <div>
@@ -288,28 +312,6 @@ export default async function HomePage({
             </div>
             <span className="badge">{filteredMatches.length} partidos</span>
           </div>
-
-          <form className="country-search" method="get" action="/#fixture">
-            <label htmlFor="country-search">Buscar por pais</label>
-            <div className="country-search-controls">
-              <input
-                id="country-search"
-                name="pais"
-                type="search"
-                defaultValue={countryQuery}
-                placeholder="Ej: Argentina, Brasil, Japon..."
-                autoComplete="off"
-              />
-              <button className="button" type="submit">
-                Buscar
-              </button>
-              {countryQuery ? (
-                <Link className="button secondary" href="/#fixture">
-                  Ver todos
-                </Link>
-              ) : null}
-            </div>
-          </form>
 
           {matches.length === 0 ? (
             <p className="muted">Todavia no hay partidos cargados.</p>
