@@ -5,7 +5,13 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { clearSession, createSession, requireAdmin, requireUser } from "@/lib/auth";
+import { ExternalSyncError, syncResultsFromApiFootball } from "@/lib/external-sync";
 import { prisma } from "@/lib/prisma";
+import { resolveKnockoutWinner } from "@/lib/tournament";
+import {
+  resetTournamentBracket,
+  syncTournamentBracket
+} from "@/lib/tournament-service";
 
 const credentialsSchema = z.object({
   email: z.string().email("Ingresa un email valido").transform((value) => value.toLowerCase()),
@@ -156,7 +162,8 @@ export async function savePredictionAction(formData: FormData) {
     .object({
       matchId: z.string().min(1),
       homeGoals: z.coerce.number().int().min(0).max(99),
-      awayGoals: z.coerce.number().int().min(0).max(99)
+      awayGoals: z.coerce.number().int().min(0).max(99),
+      advancingTeam: z.string().trim().optional()
     })
     .safeParse(Object.fromEntries(formData));
 
@@ -172,6 +179,20 @@ export async function savePredictionAction(formData: FormData) {
     redirect("/?error=locked");
   }
 
+  const isKnockout = match.round !== "GROUP";
+  const advancingTeam =
+    parsed.data.homeGoals > parsed.data.awayGoals
+      ? match.homeTeam
+      : parsed.data.awayGoals > parsed.data.homeGoals
+        ? match.awayTeam
+        : parsed.data.advancingTeam;
+  if (
+    isKnockout &&
+    (!advancingTeam || ![match.homeTeam, match.awayTeam].includes(advancingTeam))
+  ) {
+    redirect("/?error=advancing-team");
+  }
+
   await prisma.prediction.upsert({
     where: {
       userId_matchId: {
@@ -181,17 +202,20 @@ export async function savePredictionAction(formData: FormData) {
     },
     update: {
       homeGoals: parsed.data.homeGoals,
-      awayGoals: parsed.data.awayGoals
+      awayGoals: parsed.data.awayGoals,
+      advancingTeam: isKnockout ? advancingTeam : null
     },
     create: {
       userId: user.id,
       matchId: match.id,
       homeGoals: parsed.data.homeGoals,
-      awayGoals: parsed.data.awayGoals
+      awayGoals: parsed.data.awayGoals,
+      advancingTeam: isKnockout ? advancingTeam : null
     }
   });
 
   revalidatePath("/");
+  revalidatePath("/torneo");
 }
 
 export async function createMatchAction(formData: FormData) {
@@ -234,7 +258,17 @@ export async function saveResultAction(formData: FormData) {
     .object({
       matchId: z.string().min(1),
       homeGoals: z.string(),
-      awayGoals: z.string()
+      awayGoals: z.string(),
+      homePenalties: z.string().optional().default(""),
+      awayPenalties: z.string().optional().default(""),
+      homeYellowCards: z.coerce.number().int().min(0).default(0),
+      awayYellowCards: z.coerce.number().int().min(0).default(0),
+      homeSecondYellowReds: z.coerce.number().int().min(0).default(0),
+      awaySecondYellowReds: z.coerce.number().int().min(0).default(0),
+      homeDirectReds: z.coerce.number().int().min(0).default(0),
+      awayDirectReds: z.coerce.number().int().min(0).default(0),
+      homeYellowDirectReds: z.coerce.number().int().min(0).default(0),
+      awayYellowDirectReds: z.coerce.number().int().min(0).default(0)
     })
     .safeParse(raw);
 
@@ -249,14 +283,164 @@ export async function saveResultAction(formData: FormData) {
     redirect("/admin?error=incomplete");
   }
 
+  const match = await prisma.match.findUnique({ where: { id: parsed.data.matchId } });
+  if (!match) redirect("/admin?error=result");
+
+  const homeGoals = bothEmpty ? null : Number(parsed.data.homeGoals);
+  const awayGoals = bothEmpty ? null : Number(parsed.data.awayGoals);
+  const homePenalties =
+    bothEmpty || parsed.data.homePenalties === "" ? null : Number(parsed.data.homePenalties);
+  const awayPenalties =
+    bothEmpty || parsed.data.awayPenalties === "" ? null : Number(parsed.data.awayPenalties);
+  const winnerTeam =
+    match.round === "GROUP"
+      ? null
+      : resolveKnockoutWinner({
+          ...match,
+          homeGoals,
+          awayGoals,
+          homePenalties,
+          awayPenalties
+        });
+  if (
+    match.round !== "GROUP" &&
+    homeGoals !== null &&
+    awayGoals !== null &&
+    homeGoals === awayGoals &&
+    !winnerTeam
+  ) {
+    redirect("/admin?error=penalties");
+  }
+
   await prisma.match.update({
     where: { id: parsed.data.matchId },
     data: {
-      homeGoals: bothEmpty ? null : Number(parsed.data.homeGoals),
-      awayGoals: bothEmpty ? null : Number(parsed.data.awayGoals)
+      homeGoals,
+      awayGoals,
+      homePenalties,
+      awayPenalties,
+      winnerTeam,
+      homeYellowCards: parsed.data.homeYellowCards,
+      awayYellowCards: parsed.data.awayYellowCards,
+      homeSecondYellowReds: parsed.data.homeSecondYellowReds,
+      awaySecondYellowReds: parsed.data.awaySecondYellowReds,
+      homeDirectReds: parsed.data.homeDirectReds,
+      awayDirectReds: parsed.data.awayDirectReds,
+      homeYellowDirectReds: parsed.data.homeYellowDirectReds,
+      awayYellowDirectReds: parsed.data.awayYellowDirectReds
     }
   });
 
+  await syncTournamentBracket();
   revalidatePath("/");
   revalidatePath("/admin");
+  revalidatePath("/torneo");
+}
+
+export async function saveTeamRankingAction(formData: FormData) {
+  await requireAdmin();
+  const parsed = z
+    .object({
+      team: z.string().trim().min(1),
+      currentRank: z.string(),
+      previousRank: z.string()
+    })
+    .safeParse(Object.fromEntries(formData));
+  if (!parsed.success) redirect("/admin?error=ranking");
+
+  await prisma.teamRanking.upsert({
+    where: { team: parsed.data.team },
+    update: {
+      currentRank: parsed.data.currentRank ? Number(parsed.data.currentRank) : null,
+      previousRank: parsed.data.previousRank ? Number(parsed.data.previousRank) : null
+    },
+    create: {
+      team: parsed.data.team,
+      currentRank: parsed.data.currentRank ? Number(parsed.data.currentRank) : null,
+      previousRank: parsed.data.previousRank ? Number(parsed.data.previousRank) : null
+    }
+  });
+  await syncTournamentBracket();
+  revalidatePath("/admin");
+  revalidatePath("/torneo");
+}
+
+export async function saveStandingOverrideAction(formData: FormData) {
+  await requireAdmin();
+  const parsed = z
+    .object({
+      group: z.string().trim().min(1),
+      team: z.string().trim().min(1),
+      position: z.coerce.number().int().min(1).max(12),
+      note: z.string().trim().optional()
+    })
+    .safeParse(Object.fromEntries(formData));
+  if (!parsed.success) redirect("/admin?error=override");
+
+  const group = parsed.data.group.toUpperCase();
+  await prisma.$transaction(async (tx) => {
+    await tx.standingOverride.deleteMany({
+      where: {
+        group,
+        position: parsed.data.position,
+        team: { not: parsed.data.team }
+      }
+    });
+    await tx.standingOverride.upsert({
+      where: { group_team: { group, team: parsed.data.team } },
+      update: { position: parsed.data.position, note: parsed.data.note || null },
+      create: { ...parsed.data, group }
+    });
+  });
+  await syncTournamentBracket();
+  revalidatePath("/admin");
+  revalidatePath("/torneo");
+}
+
+export async function resetBracketAction(formData: FormData) {
+  await requireAdmin();
+  const confirmation = String(formData.get("confirmation") ?? "");
+  if (confirmation !== "REINICIAR") redirect("/admin?error=reset-confirmation");
+  try {
+    await resetTournamentBracket(true);
+  } catch {
+    redirect("/admin?error=reset");
+  }
+  revalidatePath("/");
+  revalidatePath("/admin");
+  revalidatePath("/torneo");
+}
+
+export async function syncTournamentAction() {
+  await requireAdmin();
+  await syncTournamentBracket();
+  revalidatePath("/");
+  revalidatePath("/admin");
+  revalidatePath("/torneo");
+}
+
+export async function syncExternalResultsAction() {
+  await requireAdmin();
+  let result;
+
+  try {
+    result = await syncResultsFromApiFootball();
+  } catch (error) {
+    if (error instanceof ExternalSyncError) {
+      redirect(`/admin?error=${error.code}`);
+    }
+    console.error("syncExternalResultsAction failed", error);
+    redirect("/admin?error=external-api");
+  }
+
+  revalidatePath("/");
+  revalidatePath("/admin");
+  revalidatePath("/ranking");
+  revalidatePath("/torneo");
+  revalidatePath("/mis-pronosticos");
+  redirect(
+    `/admin?sync=success&matched=${result.matched}&results=${result.resultsUpdated}` +
+      `&cards=${result.disciplineUpdated}&pending=${result.pendingDiscipline}` +
+      `&requests=${result.requests}&provider=${result.provider}`
+  );
 }

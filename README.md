@@ -32,6 +32,33 @@ pnpm prisma:seed
 
 El seed es seguro para produccion: conserva usuarios, resultados y pronosticos existentes; solo crea/actualiza el admin y agrega partidos faltantes del fixture.
 
+## Resultados automaticos
+
+El panel admin actualiza manualmente resultados y penales desde
+[football-data.org](https://www.football-data.org/). No se ejecutan cron jobs ni
+consultas automaticas. Las tarjetas se mantienen como carga manual porque no estan
+incluidas en su plan gratuito.
+
+Configura estas variables en Vercel:
+
+```env
+FOOTBALL_DATA_API_KEY="tu-clave"
+FOOTBALL_DATA_COMPETITION="WC"
+FOOTBALL_DATA_SEASON="2026"
+```
+
+API-Football queda disponible como respaldo opcional:
+
+```env
+API_FOOTBALL_KEY="tu-clave"
+API_FOOTBALL_LEAGUE_ID="1"
+API_FOOTBALL_SEASON="2026"
+API_FOOTBALL_EVENT_LIMIT="20"
+```
+
+Si existe `FOOTBALL_DATA_API_KEY`, el boton prioriza ese proveedor y usa una consulta por
+clic. La carga manual permanece disponible como respaldo.
+
 ## Comandos
 
 ```bash

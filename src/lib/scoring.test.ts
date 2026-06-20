@@ -43,4 +43,42 @@ describe("scorePrediction", () => {
       })
     ).toBe(0);
   });
+
+  it("scores knockout matches by exact score and advancing team", () => {
+    expect(
+      scorePrediction({
+        predictedHome: 1,
+        predictedAway: 1,
+        predictedWinner: "Argentina",
+        actualHome: 1,
+        actualAway: 1,
+        actualWinner: "Argentina",
+        isKnockout: true
+      })
+    ).toBe(3);
+
+    expect(
+      scorePrediction({
+        predictedHome: 2,
+        predictedAway: 1,
+        predictedWinner: "Argentina",
+        actualHome: 1,
+        actualAway: 1,
+        actualWinner: "Argentina",
+        isKnockout: true
+      })
+    ).toBe(1);
+
+    expect(
+      scorePrediction({
+        predictedHome: 1,
+        predictedAway: 1,
+        predictedWinner: "Brasil",
+        actualHome: 1,
+        actualAway: 1,
+        actualWinner: "Argentina",
+        isKnockout: true
+      })
+    ).toBe(0);
+  });
 });
