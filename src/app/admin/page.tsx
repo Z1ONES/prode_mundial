@@ -1,7 +1,15 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ScorePicker } from "@/components/score-picker";
-import { createMatchAction, logoutAction, saveResultAction } from "@/app/actions";
+import {
+  createMatchAction,
+  logoutAction,
+  resetBracketAction,
+  saveResultAction,
+  saveStandingOverrideAction,
+  saveTeamRankingAction,
+  syncTournamentAction
+} from "@/app/actions";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { TeamName } from "@/components/team-name";
@@ -31,10 +39,16 @@ export default async function AdminPage({
   searchParams?: { error?: string; seeded?: string; updated?: string };
 }) {
   const user = await requireAdmin();
-  const matches = await prisma.match.findMany({
-    orderBy: { startsAt: "asc" },
-    include: { _count: { select: { predictions: true } } }
-  });
+  const [matches, rankings, overrides, state] = await Promise.all([
+    prisma.match.findMany({
+      orderBy: [{ round: "asc" }, { matchNumber: "asc" }, { startsAt: "asc" }],
+      include: { _count: { select: { predictions: true } } }
+    }),
+    prisma.teamRanking.findMany({ orderBy: { team: "asc" } }),
+    prisma.standingOverride.findMany({ orderBy: [{ group: "asc" }, { position: "asc" }] }),
+    prisma.tournamentState.findUnique({ where: { id: "world-cup-2026" } })
+  ]);
+  const teams = [...new Set(matches.flatMap((match) => [match.homeTeam, match.awayTeam]))].sort();
 
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
@@ -58,6 +72,9 @@ export default async function AdminPage({
             <p>Sesion de {user.name}. Carga partidos y resultados oficiales.</p>
           </div>
           <nav className="nav">
+            <Link className="button secondary" href="/torneo">
+              Ver torneo
+            </Link>
             <Link className="button secondary" href="/">
               Volver al prode
             </Link>
@@ -116,9 +133,33 @@ export default async function AdminPage({
               Crear partido
             </button>
           </form>
+          <hr className="admin-divider" />
+          <h2>Control del cuadro</h2>
+          <p className="muted admin-helper">
+            {state?.bracketLockedAt
+              ? "El cuadro de dieciseisavos ya esta fijado."
+              : "Se fijara cuando esten completos y resueltos los 12 grupos."}
+          </p>
+          <form action={syncTournamentAction}>
+            <button className="button full secondary" type="submit">
+              Recalcular y avanzar cuadro
+            </button>
+          </form>
+          <details className="danger-zone">
+            <summary>Reiniciar cuadro eliminatorio</summary>
+            <form action={resetBracketAction} className="admin-form">
+              <p className="muted">
+                Borra partidos, resultados y pronosticos eliminatorios. Escribi REINICIAR.
+              </p>
+              <input name="confirmation" required />
+              <button className="button danger-button" type="submit">
+                Reiniciar
+              </button>
+            </form>
+          </details>
         </aside>
 
-        <section className="panel">
+        <section className="panel admin-results-panel">
           <h2>Resultados</h2>
           <div className="stack">
             {matches.length === 0 ? (
@@ -165,6 +206,72 @@ export default async function AdminPage({
                     >
                       <TeamName team={match.awayTeam} />
                     </ScorePicker>
+                    {match.round !== "GROUP" ? (
+                      <>
+                        <ScorePicker
+                          allowEmpty
+                          id={`home-penalties-${match.id}`}
+                          name="homePenalties"
+                          defaultValue={match.homePenalties}
+                        >
+                          Penales {match.homeTeam}
+                        </ScorePicker>
+                        <ScorePicker
+                          allowEmpty
+                          id={`away-penalties-${match.id}`}
+                          name="awayPenalties"
+                          defaultValue={match.awayPenalties}
+                        >
+                          Penales {match.awayTeam}
+                        </ScorePicker>
+                      </>
+                    ) : (
+                      <>
+                        <input type="hidden" name="homePenalties" value="" />
+                        <input type="hidden" name="awayPenalties" value="" />
+                      </>
+                    )}
+                    <details className="discipline-fields">
+                      <summary>Conducta FIFA</summary>
+                      <div className="discipline-grid">
+                        {[
+                          ["homeYellowCards", "Amarillas local", match.homeYellowCards],
+                          ["awayYellowCards", "Amarillas visita", match.awayYellowCards],
+                          [
+                            "homeSecondYellowReds",
+                            "Doble amarilla local",
+                            match.homeSecondYellowReds
+                          ],
+                          [
+                            "awaySecondYellowReds",
+                            "Doble amarilla visita",
+                            match.awaySecondYellowReds
+                          ],
+                          ["homeDirectReds", "Rojas local", match.homeDirectReds],
+                          ["awayDirectReds", "Rojas visita", match.awayDirectReds],
+                          [
+                            "homeYellowDirectReds",
+                            "Amarilla + roja local",
+                            match.homeYellowDirectReds
+                          ],
+                          [
+                            "awayYellowDirectReds",
+                            "Amarilla + roja visita",
+                            match.awayYellowDirectReds
+                          ]
+                        ].map(([name, label, value]) => (
+                          <label key={String(name)}>
+                            {label}
+                            <input
+                              name={String(name)}
+                              type="number"
+                              min="0"
+                              defaultValue={Number(value)}
+                            />
+                          </label>
+                        ))}
+                      </div>
+                    </details>
                     <button className="button" type="submit">
                       Guardar
                     </button>
@@ -172,6 +279,93 @@ export default async function AdminPage({
                 </article>
               ))
             )}
+          </div>
+        </section>
+      </section>
+
+      <section className="admin-tournament-grid">
+        <section className="panel">
+          <h2>Ranking FIFA</h2>
+          <p className="muted admin-helper">
+            Solo se usa si puntos, enfrentamientos, diferencia, goles y conducta siguen empatados.
+          </p>
+          <form action={saveTeamRankingAction} className="admin-form">
+            <label>
+              Seleccion
+              <select name="team" required>
+                {teams.map((team) => (
+                  <option key={team} value={team}>
+                    {team}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Ranking actual
+              <input name="currentRank" type="number" min="1" />
+            </label>
+            <label>
+              Ranking anterior
+              <input name="previousRank" type="number" min="1" />
+            </label>
+            <button className="button" type="submit">
+              Guardar ranking
+            </button>
+          </form>
+          <div className="admin-data-list">
+            {rankings.map((ranking) => (
+              <span key={ranking.team}>
+                {ranking.team}: {ranking.currentRank ?? "-"} / {ranking.previousRank ?? "-"}
+              </span>
+            ))}
+          </div>
+        </section>
+
+        <section className="panel">
+          <h2>Override de desempate</h2>
+          <p className="muted admin-helper">
+            Usalo solo cuando la tabla marque un empate pendiente.
+          </p>
+          <form action={saveStandingOverrideAction} className="admin-form">
+            <label>
+              Tabla
+              <select name="group" required>
+                {"ABCDEFGHIJKL".split("").map((group) => (
+                  <option key={group} value={group}>
+                    Grupo {group}
+                  </option>
+                ))}
+                <option value="THIRD">Mejores terceros</option>
+              </select>
+            </label>
+            <label>
+              Seleccion
+              <select name="team" required>
+                {teams.map((team) => (
+                  <option key={team} value={team}>
+                    {team}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Posicion forzada
+              <input name="position" type="number" min="1" max="12" required />
+            </label>
+            <label>
+              Motivo
+              <input name="note" />
+            </label>
+            <button className="button" type="submit">
+              Guardar override
+            </button>
+          </form>
+          <div className="admin-data-list">
+            {overrides.map((override) => (
+              <span key={override.id}>
+                {override.group} #{override.position}: {override.team}
+              </span>
+            ))}
           </div>
         </section>
       </section>

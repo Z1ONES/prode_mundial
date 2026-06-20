@@ -1,8 +1,11 @@
 type ScoreInput = {
   predictedHome: number;
   predictedAway: number;
+  predictedWinner?: string | null;
   actualHome: number | null;
   actualAway: number | null;
+  actualWinner?: string | null;
+  isKnockout?: boolean;
 };
 
 export function outcome(homeGoals: number, awayGoals: number) {
@@ -14,6 +17,13 @@ export function outcome(homeGoals: number, awayGoals: number) {
 export function scorePrediction(input: ScoreInput) {
   if (input.actualHome === null || input.actualAway === null) {
     return 0;
+  }
+
+  if (input.isKnockout) {
+    if (!input.actualWinner || input.predictedWinner !== input.actualWinner) return 0;
+    return input.predictedHome === input.actualHome && input.predictedAway === input.actualAway
+      ? 3
+      : 1;
   }
 
   const exact =

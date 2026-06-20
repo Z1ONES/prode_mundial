@@ -22,8 +22,11 @@ export async function getLeaderboard() {
           scorePrediction({
             predictedHome: prediction.homeGoals,
             predictedAway: prediction.awayGoals,
+            predictedWinner: prediction.advancingTeam,
             actualHome: prediction.match.homeGoals,
-            actualAway: prediction.match.awayGoals
+            actualAway: prediction.match.awayGoals,
+            actualWinner: prediction.match.winnerTeam,
+            isKnockout: prediction.match.round !== "GROUP"
           }),
         0
       );
@@ -35,8 +38,11 @@ export async function getLeaderboard() {
           scorePrediction({
             predictedHome: prediction.homeGoals,
             predictedAway: prediction.awayGoals,
+            predictedWinner: prediction.advancingTeam,
             actualHome: prediction.match.homeGoals,
-            actualAway: prediction.match.awayGoals
+            actualAway: prediction.match.awayGoals,
+            actualWinner: prediction.match.winnerTeam,
+            isKnockout: prediction.match.round !== "GROUP"
           }) === 3
       ).length;
 

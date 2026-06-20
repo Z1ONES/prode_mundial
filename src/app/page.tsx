@@ -78,8 +78,10 @@ export default async function HomePage({
           teamMatchesSearch(match.awayTeam, normalizedCountryQuery)
       )
     : matches;
+  const filteredGroupMatches = filteredMatches.filter((match) => match.round === "GROUP");
+  const filteredKnockoutMatches = filteredMatches.filter((match) => match.round !== "GROUP");
 
-  const matchesByGroup = filteredMatches.reduce<
+  const matchesByGroup = filteredGroupMatches.reduce<
     Array<{ group: string; days: Array<{ day: string; matches: typeof matches }> }>
   >((groups, match) => {
     const group = match.phase;
@@ -131,6 +133,9 @@ export default async function HomePage({
           <nav className="nav">
             <Link className="button secondary" href="/ranking">
               Ranking
+            </Link>
+            <Link className="button secondary" href="/torneo">
+              Torneo
             </Link>
             {user.role === "ADMIN" ? (
               <Link className="button secondary" href="/admin">
@@ -247,6 +252,19 @@ export default async function HomePage({
                         >
                           <TeamName team={match.awayTeam} />
                         </ScorePicker>
+                        {match.round !== "GROUP" ? (
+                          <div className="field advancing-field">
+                            <label htmlFor={`quick-advancing-${match.id}`}>Clasifica si empatan</label>
+                            <select
+                              id={`quick-advancing-${match.id}`}
+                              name="advancingTeam"
+                              defaultValue={prediction?.advancingTeam ?? match.homeTeam}
+                            >
+                              <option value={match.homeTeam}>{teamDisplayName(match.homeTeam)}</option>
+                              <option value={match.awayTeam}>{teamDisplayName(match.awayTeam)}</option>
+                            </select>
+                          </div>
+                        ) : null}
                         <button className="button full" type="submit">
                           Guardar pronostico
                         </button>
@@ -418,6 +436,79 @@ export default async function HomePage({
               ))}
             </div>
           )}
+
+          {filteredKnockoutMatches.length > 0 ? (
+            <section className="group-section knockout-fixture-section">
+              <div className="group-heading">
+                <h3>Eliminatorias</h3>
+                <span className="badge">{filteredKnockoutMatches.length} partidos</span>
+              </div>
+              <div className="group-days">
+                <div className="match-list">
+                  {filteredKnockoutMatches.map((match) => {
+                    const prediction = match.predictions[0];
+                    const locked = match.startsAt <= now;
+                    return (
+                      <article className="match-card" key={match.id}>
+                        <div className="match-time">
+                          <strong>#{match.matchNumber}</strong>
+                          <span>{match.phase}</span>
+                        </div>
+                        <div className="match-main">
+                          <div className="match-head">
+                            <p className="match-title">
+                              <TeamName team={match.homeTeam} /> <span className="versus">vs</span>{" "}
+                              <TeamName team={match.awayTeam} />
+                            </p>
+                            <span className="badge">{locked ? "Cerrado" : "Abierto"}</span>
+                          </div>
+                          {!locked ? (
+                            <form action={savePredictionAction} className="score-form">
+                              <input type="hidden" name="matchId" value={match.id} />
+                              <ScorePicker
+                                id={`ko-home-${match.id}`}
+                                name="homeGoals"
+                                defaultValue={prediction?.homeGoals ?? 0}
+                                required
+                              >
+                                <TeamName team={match.homeTeam} />
+                              </ScorePicker>
+                              <ScorePicker
+                                id={`ko-away-${match.id}`}
+                                name="awayGoals"
+                                defaultValue={prediction?.awayGoals ?? 0}
+                                required
+                              >
+                                <TeamName team={match.awayTeam} />
+                              </ScorePicker>
+                              <div className="field advancing-field">
+                                <label htmlFor={`advancing-${match.id}`}>Clasifica si empatan</label>
+                                <select
+                                  id={`advancing-${match.id}`}
+                                  name="advancingTeam"
+                                  defaultValue={prediction?.advancingTeam ?? match.homeTeam}
+                                >
+                                  <option value={match.homeTeam}>
+                                    {teamDisplayName(match.homeTeam)}
+                                  </option>
+                                  <option value={match.awayTeam}>
+                                    {teamDisplayName(match.awayTeam)}
+                                  </option>
+                                </select>
+                              </div>
+                              <button className="button full" type="submit">
+                                Guardar pronostico
+                              </button>
+                            </form>
+                          ) : null}
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              </div>
+            </section>
+          ) : null}
         </section>
       </section>
     </main>

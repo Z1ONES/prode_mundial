@@ -42,7 +42,8 @@ a {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -305,6 +306,227 @@ button {
   }
 }
 
+/* Tournament standings and knockout bracket */
+.tournament-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 18px;
+  padding: 5px;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.tournament-tabs a {
+  min-width: 140px;
+  flex: 1;
+  padding: 11px 14px;
+  border-radius: 10px;
+  color: var(--muted);
+  font-weight: 800;
+  text-align: center;
+  text-decoration: none;
+}
+
+.tournament-tabs a.is-active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.standings-grid,
+.admin-tournament-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.group-table-panel {
+  padding: 16px!important;
+}
+
+.table-scroll,
+.bracket-scroll {
+  overflow-x: auto;
+}
+
+.football-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.football-table th,
+.football-table td {
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--line);
+  text-align: center;
+}
+
+.football-table th:nth-child(2),
+.football-table td:nth-child(2) {
+  min-width: 170px;
+  text-align: left;
+}
+
+.football-table th {
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.qualified-row {
+  background: rgba(16, 185, 129, 0.12);
+}
+
+.third-row {
+  background: rgba(249, 115, 22, 0.1);
+}
+
+.unresolved-mark {
+  display: inline-grid;
+  width: 18px;
+  height: 18px;
+  margin-left: 6px;
+  place-items: center;
+  border-radius: 50%;
+  background: #f59e0b;
+  color: #111;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.bracket-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(230px, 1fr));
+  gap: 16px;
+  min-width: 1480px;
+  align-items: start;
+}
+
+.bracket-round h3 {
+  margin: 0 0 10px;
+  padding: 10px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--accent);
+  text-align: center;
+}
+
+.bracket-match-list {
+  display: grid;
+  gap: 12px;
+}
+
+.bracket-match {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.bracket-match > div {
+  display: flex;
+  min-height: 30px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.match-number {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.winner-line {
+  padding-top: 7px;
+  border-top: 1px solid var(--line);
+  color: var(--accent);
+  font-size: 12px;
+}
+
+.advancing-field {
+  min-width: 180px;
+}
+
+.admin-divider {
+  margin: 22px 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+
+.admin-helper {
+  margin-bottom: 14px;
+}
+
+.danger-zone,
+.discipline-fields {
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface-2);
+}
+
+.danger-zone summary,
+.discipline-fields summary {
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.danger-button {
+  background: var(--danger);
+}
+
+.discipline-fields {
+  grid-column: 1 / -1;
+}
+
+.discipline-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.discipline-grid label {
+  display: grid;
+  gap: 5px;
+}
+
+.admin-tournament-grid {
+  margin-top: 18px;
+}
+
+.admin-data-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 14px;
+}
+
+.admin-data-list span {
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+@media (min-width: 768px) {
+  .standings-grid,
+  .admin-tournament-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .discipline-grid {
+    grid-template-columns: repeat(4, minmax(100px, 1fr));
+  }
+}
+
 .group-section {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -525,7 +747,8 @@ label {
   gap: 6px;
 }
 
-input {
+input,
+select {
   width: 100%;
   min-height: 44px;
   border: 1px solid var(--line-strong);
@@ -535,7 +758,8 @@ input {
   color: #fff;
 }
 
-input:focus {
+input:focus,
+select:focus {
   border-color: var(--accent);
   outline: 3px solid rgba(249, 115, 22, 0.18);
 }

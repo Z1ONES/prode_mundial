@@ -19,16 +19,29 @@ model User {
 }
 
 model Match {
-  id          String       @id @default(cuid())
-  homeTeam    String
-  awayTeam    String
-  phase       String
-  startsAt    DateTime
-  homeGoals   Int?
-  awayGoals   Int?
-  predictions Prediction[]
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id                     String       @id @default(cuid())
+  matchNumber            Int?         @unique
+  round                  String       @default("GROUP")
+  homeTeam               String
+  awayTeam               String
+  phase                  String
+  startsAt               DateTime
+  homeGoals              Int?
+  awayGoals              Int?
+  homePenalties          Int?
+  awayPenalties          Int?
+  winnerTeam             String?
+  homeYellowCards        Int          @default(0)
+  awayYellowCards        Int          @default(0)
+  homeSecondYellowReds   Int          @default(0)
+  awaySecondYellowReds   Int          @default(0)
+  homeDirectReds         Int          @default(0)
+  awayDirectReds         Int          @default(0)
+  homeYellowDirectReds   Int          @default(0)
+  awayYellowDirectReds   Int          @default(0)
+  predictions            Prediction[]
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
 
   @@unique([homeTeam, awayTeam, startsAt])
 }
@@ -39,10 +52,39 @@ model Prediction {
   matchId   String
   homeGoals Int
   awayGoals Int
+  advancingTeam String?
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   match     Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([userId, matchId])
+}
+
+model TeamRanking {
+  team         String   @id
+  currentRank  Int?
+  previousRank Int?
+  updatedAt    DateTime @updatedAt
+}
+
+model StandingOverride {
+  id        String   @id @default(cuid())
+  group     String
+  team      String
+  position  Int
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([group, team])
+  @@unique([group, position])
+}
+
+model TournamentState {
+  id              String    @id @default("world-cup-2026")
+  bracketLockedAt DateTime?
+  thirdPlaceKey   String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 }
