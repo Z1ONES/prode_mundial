@@ -1112,6 +1112,11 @@ select:focus {
   font-size: 12px;
 }
 
+.external-sync-error {
+  display: grid;
+  gap: 6px;
+}
+
 @media (prefers-color-scheme: light) {
   :root {
     --bg: #fff7ed;

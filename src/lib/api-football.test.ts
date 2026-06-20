@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  ApiFootballError,
   countDiscipline,
   findExternalFixture,
   normalizeTeamName,
@@ -21,6 +22,12 @@ function fixture(id: number, home: string, away: string, date: string): ApiFixtu
 }
 
 describe("API-Football matching", () => {
+  it("provides a typed provider error", () => {
+    const error = new ApiFootballError(403, "Access denied");
+    expect(error.status).toBe(403);
+    expect(error.message).toBe("Access denied");
+  });
+
   it("normalizes provider aliases", () => {
     expect(normalizeTeamName("USA")).toBe("united states");
     expect(normalizeTeamName("Côte d'Ivoire")).toBe("ivory coast");

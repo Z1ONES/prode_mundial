@@ -3,6 +3,15 @@ import { resolveKnockoutWinner } from "./tournament";
 const API_BASE_URL = "https://v3.football.api-sports.io";
 const FINISHED_STATUSES = new Set(["FT", "AET", "PEN"]);
 
+export class ApiFootballError extends Error {
+  constructor(
+    public status: number | null,
+    message: string
+  ) {
+    super(message);
+  }
+}
+
 type ApiTeam = {
   id: number;
   name: string;
@@ -224,14 +233,22 @@ async function apiGet<T>(path: string, apiKey: string) {
     headers: { "x-apisports-key": apiKey },
     cache: "no-store"
   });
-
-  if (!response.ok) {
-    throw new Error(`API-Football respondio ${response.status}`);
+  let body: ApiResponse<T>;
+  try {
+    body = (await response.json()) as ApiResponse<T>;
+  } catch {
+    throw new ApiFootballError(
+      response.status,
+      `API-Football respondio ${response.status} sin un cuerpo JSON valido.`
+    );
   }
-
-  const body = (await response.json()) as ApiResponse<T>;
   const apiError = apiErrorMessage(body);
-  if (apiError) throw new Error(apiError);
+  if (!response.ok || apiError) {
+    throw new ApiFootballError(
+      response.status,
+      apiError || `API-Football respondio ${response.status}.`
+    );
+  }
   return body.response;
 }
 

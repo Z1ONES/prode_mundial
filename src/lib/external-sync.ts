@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import {
+  ApiFootballError,
   countDiscipline,
   findExternalFixture,
   getFixtureEvents,
@@ -21,18 +22,15 @@ export class ExternalSyncError extends Error {
   }
 }
 
+function safeErrorMessage(error: unknown) {
+  const message = error instanceof Error ? error.message : "Error desconocido";
+  return message.replace(/(?:sk_|key=)[A-Za-z0-9_.-]+/gi, "[credencial oculta]").slice(0, 500);
+}
+
 export async function syncResultsFromApiFootball() {
   const apiKey = process.env.API_FOOTBALL_KEY?.trim();
   if (!apiKey) {
     throw new ExternalSyncError("api-key", "Falta configurar API_FOOTBALL_KEY.");
-  }
-
-  const state = await prisma.tournamentState.findUnique({ where: { id: STATE_ID } });
-  if (
-    state?.lastExternalSyncAt &&
-    Date.now() - state.lastExternalSyncAt.getTime() < COOLDOWN_MS
-  ) {
-    throw new ExternalSyncError("cooldown", "Espera un minuto antes de actualizar otra vez.");
   }
 
   const eventLimit = Math.min(
@@ -42,6 +40,14 @@ export async function syncResultsFromApiFootball() {
   let requests = 1;
 
   try {
+    const state = await prisma.tournamentState.findUnique({ where: { id: STATE_ID } });
+    if (
+      state?.lastExternalSyncAt &&
+      Date.now() - state.lastExternalSyncAt.getTime() < COOLDOWN_MS
+    ) {
+      throw new ExternalSyncError("cooldown", "Espera un minuto antes de actualizar otra vez.");
+    }
+
     const [fixtures, matches] = await Promise.all([
       getWorldCupFixtures(apiKey),
       prisma.match.findMany({
@@ -147,24 +153,31 @@ export async function syncResultsFromApiFootball() {
       requests
     };
   } catch (error) {
+    const errorMessage = safeErrorMessage(error);
     await prisma.tournamentState.upsert({
       where: { id: STATE_ID },
       create: {
         id: STATE_ID,
         lastExternalSyncAt: new Date(),
         lastExternalSyncStatus: JSON.stringify({
-          error: error instanceof Error ? error.message : "Error desconocido"
+          error: errorMessage
         }),
         lastExternalSyncRequests: requests
       },
       update: {
         lastExternalSyncAt: new Date(),
         lastExternalSyncStatus: JSON.stringify({
-          error: error instanceof Error ? error.message : "Error desconocido"
+          error: errorMessage
         }),
         lastExternalSyncRequests: requests
       }
     });
+    if (error instanceof ApiFootballError) {
+      throw new ExternalSyncError(
+        error.status === 401 || error.status === 403 ? "api-auth" : "api-response",
+        errorMessage
+      );
+    }
     throw error;
   }
 }

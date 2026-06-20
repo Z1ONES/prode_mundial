@@ -39,6 +39,10 @@ const ERROR_MESSAGES: Record<string, string> = {
   cooldown: "Espera un minuto antes de volver a consultar la API.",
   "no-fixtures":
     "API-Football no devolvio partidos. Revisa que el plan incluya la temporada 2026.",
+  "api-auth":
+    "API-Football rechazo la credencial. Revisa la clave y que pertenezca a una suscripcion activa.",
+  "api-response":
+    "API-Football respondio con un error. Debajo aparece el detalle informado por el proveedor.",
   "external-api":
     "No se pudo consultar API-Football. Revisa la clave, el cupo diario y los logs.",
   default: "Revisa los datos del formulario. Hay campos invalidos."
@@ -70,6 +74,15 @@ export default async function AdminPage({
     prisma.tournamentState.findUnique({ where: { id: "world-cup-2026" } })
   ]);
   const teams = [...new Set(matches.flatMap((match) => [match.homeTeam, match.awayTeam]))].sort();
+  let externalSyncDetail: string | null = null;
+  if (state?.lastExternalSyncStatus) {
+    try {
+      const status = JSON.parse(state.lastExternalSyncStatus) as { error?: string };
+      externalSyncDetail = status.error ?? null;
+    } catch {
+      externalSyncDetail = null;
+    }
+  }
 
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
@@ -109,8 +122,9 @@ export default async function AdminPage({
       </header>
 
       {searchParams?.error ? (
-        <div className="error">
-          {ERROR_MESSAGES[searchParams.error] ?? ERROR_MESSAGES.default}
+        <div className="error external-sync-error">
+          <strong>{ERROR_MESSAGES[searchParams.error] ?? ERROR_MESSAGES.default}</strong>
+          {externalSyncDetail ? <span>Detalle: {externalSyncDetail}</span> : null}
         </div>
       ) : null}
 
