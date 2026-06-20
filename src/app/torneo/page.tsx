@@ -76,6 +76,9 @@ export default async function TournamentPage({
             <Link className="button secondary" href="/">
               Volver al prode
             </Link>
+            <Link className="button secondary" href="/mis-pronosticos">
+              Mis pronosticos
+            </Link>
             {user.role === "ADMIN" ? (
               <Link className="button secondary" href="/admin">
                 Admin

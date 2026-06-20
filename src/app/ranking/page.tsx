@@ -37,6 +37,9 @@ export default async function RankingPage() {
             <Link className="button secondary" href="/">
               Prode
             </Link>
+            <Link className="button secondary" href="/mis-pronosticos">
+              Mis pronosticos
+            </Link>
             {user.role === "ADMIN" ? (
               <Link className="button secondary" href="/admin">
                 Admin

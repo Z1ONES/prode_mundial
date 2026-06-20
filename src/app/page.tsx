@@ -131,6 +131,9 @@ export default async function HomePage({
             <p>Hola, {user.name}</p>
           </div>
           <nav className="nav">
+            <Link className="button secondary" href="/mis-pronosticos">
+              Mis pronosticos
+            </Link>
             <Link className="button secondary" href="/ranking">
               Ranking
             </Link>
