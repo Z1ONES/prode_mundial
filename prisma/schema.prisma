@@ -22,6 +22,7 @@ model Match {
   id                   String       @id @default(cuid())
   matchNumber          Int?         @unique
   externalFixtureId    Int?         @unique
+  externalProvider     String?
   externalSyncedAt     DateTime?
   disciplineSyncedAt   DateTime?
   round                String       @default("GROUP")

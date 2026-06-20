@@ -441,6 +441,6 @@ export async function syncExternalResultsAction() {
   redirect(
     `/admin?sync=success&matched=${result.matched}&results=${result.resultsUpdated}` +
       `&cards=${result.disciplineUpdated}&pending=${result.pendingDiscipline}` +
-      `&requests=${result.requests}`
+      `&requests=${result.requests}&provider=${result.provider}`
   );
 }

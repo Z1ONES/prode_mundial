@@ -72,6 +72,7 @@ export type MatchForExternalSync = {
   startsAt: Date;
   round: string;
   externalFixtureId: number | null;
+  externalProvider?: string | null;
   disciplineSyncedAt: Date | null;
 };
 
@@ -113,7 +114,10 @@ export function findExternalFixture(
   match: MatchForExternalSync,
   fixtures: ApiFixture[]
 ) {
-  if (match.externalFixtureId !== null) {
+  if (
+    (!match.externalProvider || match.externalProvider === "api-football") &&
+    match.externalFixtureId !== null
+  ) {
     const byId = fixtures.find((fixture) => fixture.fixture.id === match.externalFixtureId);
     if (byId) return byId;
   }

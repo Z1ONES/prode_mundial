@@ -35,10 +35,11 @@ function formatDate(date: Date) {
 }
 
 const ERROR_MESSAGES: Record<string, string> = {
-  "api-key": "Falta configurar API_FOOTBALL_KEY en las variables de entorno de Vercel.",
+  "api-key":
+    "Falta configurar FOOTBALL_DATA_API_KEY o API_FOOTBALL_KEY en Vercel.",
   cooldown: "Espera un minuto antes de volver a consultar la API.",
   "no-fixtures":
-    "API-Football no devolvio partidos. Revisa que el plan incluya la temporada 2026.",
+    "El proveedor no devolvio partidos. Revisa la competencia, temporada y cobertura de la cuenta.",
   "api-auth":
     "API-Football rechazo la credencial. Revisa la clave y que pertenezca a una suscripcion activa.",
   "api-response":
@@ -61,6 +62,7 @@ export default async function AdminPage({
     cards?: string;
     pending?: string;
     requests?: string;
+    provider?: string;
   };
 }) {
   const user = await requireAdmin();
@@ -137,11 +139,17 @@ export default async function AdminPage({
 
       {searchParams?.sync === "success" ? (
         <div className="success">
-          API actualizada: {searchParams.results ?? 0} resultados,{" "}
-          {searchParams.cards ?? 0} partidos con tarjetas y{" "}
-          {searchParams.matched ?? 0} partidos vinculados. Consultas usadas:{" "}
-          {searchParams.requests ?? 0}.
-          {Number(searchParams.pending ?? 0) > 0
+          API actualizada con{" "}
+          {searchParams.provider === "football-data"
+            ? "football-data.org"
+            : "API-Football"}
+          : {searchParams.results ?? 0} resultados y {searchParams.matched ?? 0} partidos
+          vinculados. Consultas usadas: {searchParams.requests ?? 0}.
+          {searchParams.provider !== "football-data"
+            ? ` Tarjetas actualizadas: ${searchParams.cards ?? 0}.`
+            : " Las tarjetas permanecen manuales."}
+          {searchParams.provider !== "football-data" &&
+          Number(searchParams.pending ?? 0) > 0
             ? ` Quedan ${searchParams.pending} partidos con tarjetas pendientes para el proximo clic.`
             : ""}
         </div>
@@ -185,8 +193,8 @@ export default async function AdminPage({
           <hr className="admin-divider" />
           <h2>Resultados automaticos</h2>
           <p className="muted admin-helper">
-            Consulta API-Football solo cuando presionas el boton. Actualiza marcadores,
-            penales y tarjetas de partidos finalizados.
+            Usa football-data.org para resultados y penales. Las tarjetas quedan manuales.
+            Si no tiene clave configurada, intenta usar API-Football como respaldo.
           </p>
           <form action={syncExternalResultsAction}>
             <button className="button full" type="submit">
@@ -200,7 +208,12 @@ export default async function AdminPage({
             </span>
             <span>Consultas usadas: {state?.lastExternalSyncRequests ?? 0}</span>
             <span>
-              API configurada: {process.env.API_FOOTBALL_KEY ? "Si" : "No"}
+              Proveedor:{" "}
+              {process.env.FOOTBALL_DATA_API_KEY
+                ? "football-data.org"
+                : process.env.API_FOOTBALL_KEY
+                  ? "API-Football"
+                  : "Sin configurar"}
             </span>
           </div>
           <hr className="admin-divider" />

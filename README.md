@@ -34,11 +34,20 @@ El seed es seguro para produccion: conserva usuarios, resultados y pronosticos e
 
 ## Resultados automaticos
 
-El panel admin puede actualizar manualmente resultados, penales y tarjetas desde
-[API-Football](https://www.api-football.com/). No se ejecutan cron jobs ni consultas
-automaticas.
+El panel admin actualiza manualmente resultados y penales desde
+[football-data.org](https://www.football-data.org/). No se ejecutan cron jobs ni
+consultas automaticas. Las tarjetas se mantienen como carga manual porque no estan
+incluidas en su plan gratuito.
 
 Configura estas variables en Vercel:
+
+```env
+FOOTBALL_DATA_API_KEY="tu-clave"
+FOOTBALL_DATA_COMPETITION="WC"
+FOOTBALL_DATA_SEASON="2026"
+```
+
+API-Football queda disponible como respaldo opcional:
 
 ```env
 API_FOOTBALL_KEY="tu-clave"
@@ -47,9 +56,8 @@ API_FOOTBALL_SEASON="2026"
 API_FOOTBALL_EVENT_LIMIT="20"
 ```
 
-Cada clic usa una consulta para el fixture completo y hasta
-`API_FOOTBALL_EVENT_LIMIT` consultas adicionales para tarjetas de partidos finalizados
-que todavia no fueron sincronizados. La carga manual permanece disponible como respaldo.
+Si existe `FOOTBALL_DATA_API_KEY`, el boton prioriza ese proveedor y usa una consulta por
+clic. La carga manual permanece disponible como respaldo.
 
 ## Comandos
 

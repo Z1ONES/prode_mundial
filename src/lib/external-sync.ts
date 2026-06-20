@@ -8,6 +8,13 @@ import {
   isFinishedFixture,
   resultFromFixture
 } from "@/lib/api-football";
+import {
+  findFootballDataMatch,
+  FootballDataError,
+  getFootballDataWorldCupMatches,
+  isFinishedFootballDataMatch,
+  resultFromFootballData
+} from "@/lib/football-data";
 import { syncTournamentBracket } from "@/lib/tournament-service";
 
 const STATE_ID = "world-cup-2026";
@@ -28,9 +35,13 @@ function safeErrorMessage(error: unknown) {
 }
 
 export async function syncResultsFromApiFootball() {
-  const apiKey = process.env.API_FOOTBALL_KEY?.trim();
-  if (!apiKey) {
-    throw new ExternalSyncError("api-key", "Falta configurar API_FOOTBALL_KEY.");
+  const footballDataKey = process.env.FOOTBALL_DATA_API_KEY?.trim();
+  const apiFootballKey = process.env.API_FOOTBALL_KEY?.trim();
+  if (!footballDataKey && !apiFootballKey) {
+    throw new ExternalSyncError(
+      "api-key",
+      "Falta configurar FOOTBALL_DATA_API_KEY o API_FOOTBALL_KEY."
+    );
   }
 
   const eventLimit = Math.min(
@@ -48,8 +59,11 @@ export async function syncResultsFromApiFootball() {
       throw new ExternalSyncError("cooldown", "Espera un minuto antes de actualizar otra vez.");
     }
 
+    const provider = footballDataKey ? "football-data" : "api-football";
     const [fixtures, matches] = await Promise.all([
-      getWorldCupFixtures(apiKey),
+      footballDataKey
+        ? getFootballDataWorldCupMatches(footballDataKey)
+        : getWorldCupFixtures(apiFootballKey!),
       prisma.match.findMany({
         orderBy: { startsAt: "asc" },
         select: {
@@ -59,6 +73,7 @@ export async function syncResultsFromApiFootball() {
           startsAt: true,
           round: true,
           externalFixtureId: true,
+          externalProvider: true,
           disciplineSyncedAt: true
         }
       })
@@ -67,9 +82,24 @@ export async function syncResultsFromApiFootball() {
     if (fixtures.length === 0) {
       throw new ExternalSyncError(
         "no-fixtures",
-        "La API no devolvio partidos del Mundial 2026."
+        `${provider} no devolvio partidos del Mundial 2026.`
       );
     }
+
+    await prisma.match.updateMany({
+      where: {
+        externalFixtureId: { not: null },
+        OR: [
+          { externalProvider: { not: provider } },
+          { externalProvider: null }
+        ]
+      },
+      data: {
+        externalFixtureId: null,
+        externalProvider: null,
+        externalSyncedAt: null
+      }
+    });
 
     let matched = 0;
     let resultsUpdated = 0;
@@ -77,7 +107,35 @@ export async function syncResultsFromApiFootball() {
     let pendingDiscipline = 0;
 
     for (const match of matches) {
-      const fixture = findExternalFixture(match, fixtures);
+      if (footballDataKey) {
+        const fixture = findFootballDataMatch(
+          match,
+          fixtures as Awaited<ReturnType<typeof getFootballDataWorldCupMatches>>
+        );
+        if (!fixture) continue;
+        matched += 1;
+
+        const result = isFinishedFootballDataMatch(fixture)
+          ? resultFromFootballData(fixture, match)
+          : null;
+
+        await prisma.match.update({
+          where: { id: match.id },
+          data: {
+            externalFixtureId: fixture.id,
+            externalProvider: provider,
+            externalSyncedAt: new Date(),
+            ...(result ?? {})
+          }
+        });
+        if (result) resultsUpdated += 1;
+        continue;
+      }
+
+      const fixture = findExternalFixture(
+        match,
+        fixtures as Awaited<ReturnType<typeof getWorldCupFixtures>>
+      );
       if (!fixture) continue;
       matched += 1;
 
@@ -88,7 +146,7 @@ export async function syncResultsFromApiFootball() {
       let disciplineData = {};
 
       if (shouldSyncDiscipline) {
-        const events = await getFixtureEvents(fixture.fixture.id, apiKey);
+        const events = await getFixtureEvents(fixture.fixture.id, apiFootballKey!);
         requests += 1;
         const home = countDiscipline(events, fixture.teams.home.id);
         const away = countDiscipline(events, fixture.teams.away.id);
@@ -112,6 +170,7 @@ export async function syncResultsFromApiFootball() {
         where: { id: match.id },
         data: {
           externalFixtureId: fixture.fixture.id,
+          externalProvider: provider,
           externalSyncedAt: new Date(),
           ...(result ?? {}),
           ...disciplineData
@@ -125,6 +184,7 @@ export async function syncResultsFromApiFootball() {
 
     const status = JSON.stringify({
       matched,
+      provider,
       resultsUpdated,
       disciplineUpdated,
       pendingDiscipline
@@ -147,6 +207,7 @@ export async function syncResultsFromApiFootball() {
 
     return {
       matched,
+      provider,
       resultsUpdated,
       disciplineUpdated,
       pendingDiscipline,
@@ -173,6 +234,12 @@ export async function syncResultsFromApiFootball() {
       }
     });
     if (error instanceof ApiFootballError) {
+      throw new ExternalSyncError(
+        error.status === 401 || error.status === 403 ? "api-auth" : "api-response",
+        errorMessage
+      );
+    }
+    if (error instanceof FootballDataError) {
       throw new ExternalSyncError(
         error.status === 401 || error.status === 403 ? "api-auth" : "api-response",
         errorMessage
