@@ -390,8 +390,8 @@ button {
   min-width: 72px;
   padding: 9px 10px;
   border-radius: 7px;
-  background: var(--ink);
-  color: #fff;
+  background: #fff8ef;
+  color: #22170f;
   font-size: 20px;
   font-weight: 950;
   text-align: center;
