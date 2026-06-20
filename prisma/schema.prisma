@@ -19,44 +19,47 @@ model User {
 }
 
 model Match {
-  id                     String       @id @default(cuid())
-  matchNumber            Int?         @unique
-  round                  String       @default("GROUP")
-  homeTeam               String
-  awayTeam               String
-  phase                  String
-  startsAt               DateTime
-  homeGoals              Int?
-  awayGoals              Int?
-  homePenalties          Int?
-  awayPenalties          Int?
-  winnerTeam             String?
-  homeYellowCards        Int          @default(0)
-  awayYellowCards        Int          @default(0)
-  homeSecondYellowReds   Int          @default(0)
-  awaySecondYellowReds   Int          @default(0)
-  homeDirectReds         Int          @default(0)
-  awayDirectReds         Int          @default(0)
-  homeYellowDirectReds   Int          @default(0)
-  awayYellowDirectReds   Int          @default(0)
-  predictions            Prediction[]
-  createdAt              DateTime     @default(now())
-  updatedAt              DateTime     @updatedAt
+  id                   String       @id @default(cuid())
+  matchNumber          Int?         @unique
+  externalFixtureId    Int?         @unique
+  externalSyncedAt     DateTime?
+  disciplineSyncedAt   DateTime?
+  round                String       @default("GROUP")
+  homeTeam             String
+  awayTeam             String
+  phase                String
+  startsAt             DateTime
+  homeGoals            Int?
+  awayGoals            Int?
+  homePenalties        Int?
+  awayPenalties        Int?
+  winnerTeam           String?
+  homeYellowCards      Int          @default(0)
+  awayYellowCards      Int          @default(0)
+  homeSecondYellowReds Int          @default(0)
+  awaySecondYellowReds Int          @default(0)
+  homeDirectReds       Int          @default(0)
+  awayDirectReds       Int          @default(0)
+  homeYellowDirectReds Int          @default(0)
+  awayYellowDirectReds Int          @default(0)
+  predictions          Prediction[]
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
 
   @@unique([homeTeam, awayTeam, startsAt])
 }
 
 model Prediction {
-  id        String   @id @default(cuid())
-  userId    String
-  matchId   String
-  homeGoals Int
-  awayGoals Int
+  id            String   @id @default(cuid())
+  userId        String
+  matchId       String
+  homeGoals     Int
+  awayGoals     Int
   advancingTeam String?
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  match     Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  match         Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   @@unique([userId, matchId])
 }
@@ -82,9 +85,12 @@ model StandingOverride {
 }
 
 model TournamentState {
-  id              String    @id @default("world-cup-2026")
-  bracketLockedAt DateTime?
-  thirdPlaceKey   String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id                       String    @id @default("world-cup-2026")
+  bracketLockedAt          DateTime?
+  thirdPlaceKey            String?
+  lastExternalSyncAt       DateTime?
+  lastExternalSyncStatus   String?
+  lastExternalSyncRequests Int       @default(0)
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
 }

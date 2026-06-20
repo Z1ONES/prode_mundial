@@ -8,6 +8,7 @@ import {
   saveResultAction,
   saveStandingOverrideAction,
   saveTeamRankingAction,
+  syncExternalResultsAction,
   syncTournamentAction
 } from "@/app/actions";
 import { requireAdmin } from "@/lib/auth";
@@ -33,10 +34,30 @@ function formatDate(date: Date) {
   }).format(date);
 }
 
+const ERROR_MESSAGES: Record<string, string> = {
+  "api-key": "Falta configurar API_FOOTBALL_KEY en las variables de entorno de Vercel.",
+  cooldown: "Espera un minuto antes de volver a consultar la API.",
+  "no-fixtures":
+    "API-Football no devolvio partidos. Revisa que el plan incluya la temporada 2026.",
+  "external-api":
+    "No se pudo consultar API-Football. Revisa la clave, el cupo diario y los logs.",
+  default: "Revisa los datos del formulario. Hay campos invalidos."
+};
+
 export default async function AdminPage({
   searchParams
 }: {
-  searchParams?: { error?: string; seeded?: string; updated?: string };
+  searchParams?: {
+    error?: string;
+    seeded?: string;
+    updated?: string;
+    sync?: string;
+    matched?: string;
+    results?: string;
+    cards?: string;
+    pending?: string;
+    requests?: string;
+  };
 }) {
   const user = await requireAdmin();
   const [matches, rankings, overrides, state] = await Promise.all([
@@ -88,13 +109,27 @@ export default async function AdminPage({
       </header>
 
       {searchParams?.error ? (
-        <div className="error">Revisa los datos del formulario. Hay campos invalidos.</div>
+        <div className="error">
+          {ERROR_MESSAGES[searchParams.error] ?? ERROR_MESSAGES.default}
+        </div>
       ) : null}
 
       {searchParams?.seeded ? (
         <div className="success">
           Fixture cargado: {searchParams.seeded} partidos nuevos, {searchParams.updated ?? 0}{" "}
           actualizados.
+        </div>
+      ) : null}
+
+      {searchParams?.sync === "success" ? (
+        <div className="success">
+          API actualizada: {searchParams.results ?? 0} resultados,{" "}
+          {searchParams.cards ?? 0} partidos con tarjetas y{" "}
+          {searchParams.matched ?? 0} partidos vinculados. Consultas usadas:{" "}
+          {searchParams.requests ?? 0}.
+          {Number(searchParams.pending ?? 0) > 0
+            ? ` Quedan ${searchParams.pending} partidos con tarjetas pendientes para el proximo clic.`
+            : ""}
         </div>
       ) : null}
 
@@ -133,6 +168,27 @@ export default async function AdminPage({
               Crear partido
             </button>
           </form>
+          <hr className="admin-divider" />
+          <h2>Resultados automaticos</h2>
+          <p className="muted admin-helper">
+            Consulta API-Football solo cuando presionas el boton. Actualiza marcadores,
+            penales y tarjetas de partidos finalizados.
+          </p>
+          <form action={syncExternalResultsAction}>
+            <button className="button full" type="submit">
+              Actualizar resultados desde API
+            </button>
+          </form>
+          <div className="external-sync-status">
+            <span>
+              Ultima consulta:{" "}
+              {state?.lastExternalSyncAt ? formatDate(state.lastExternalSyncAt) : "Nunca"}
+            </span>
+            <span>Consultas usadas: {state?.lastExternalSyncRequests ?? 0}</span>
+            <span>
+              API configurada: {process.env.API_FOOTBALL_KEY ? "Si" : "No"}
+            </span>
+          </div>
           <hr className="admin-divider" />
           <h2>Control del cuadro</h2>
           <p className="muted admin-helper">

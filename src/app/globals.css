@@ -1101,6 +1101,17 @@ select:focus {
   background: rgba(255, 255, 255, 0.05);
 }
 
+.external-sync-status {
+  display: grid;
+  gap: 5px;
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
 @media (prefers-color-scheme: light) {
   :root {
     --bg: #fff7ed;

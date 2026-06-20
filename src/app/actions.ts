@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { clearSession, createSession, requireAdmin, requireUser } from "@/lib/auth";
+import { ExternalSyncError, syncResultsFromApiFootball } from "@/lib/external-sync";
 import { prisma } from "@/lib/prisma";
 import { resolveKnockoutWinner } from "@/lib/tournament";
 import {
@@ -416,4 +417,30 @@ export async function syncTournamentAction() {
   revalidatePath("/");
   revalidatePath("/admin");
   revalidatePath("/torneo");
+}
+
+export async function syncExternalResultsAction() {
+  await requireAdmin();
+  let result;
+
+  try {
+    result = await syncResultsFromApiFootball();
+  } catch (error) {
+    if (error instanceof ExternalSyncError) {
+      redirect(`/admin?error=${error.code}`);
+    }
+    console.error("syncExternalResultsAction failed", error);
+    redirect("/admin?error=external-api");
+  }
+
+  revalidatePath("/");
+  revalidatePath("/admin");
+  revalidatePath("/ranking");
+  revalidatePath("/torneo");
+  revalidatePath("/mis-pronosticos");
+  redirect(
+    `/admin?sync=success&matched=${result.matched}&results=${result.resultsUpdated}` +
+      `&cards=${result.disciplineUpdated}&pending=${result.pendingDiscipline}` +
+      `&requests=${result.requests}`
+  );
 }
