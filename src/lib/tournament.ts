@@ -170,6 +170,7 @@ function finalTieBreak(
       return (overrideA ?? Number.MAX_SAFE_INTEGER) - (overrideB ?? Number.MAX_SAFE_INTEGER);
     }
     return (
+      b.points - a.points ||
       b.goalDifference - a.goalDifference ||
       b.goalsFor - a.goalsFor ||
       b.conduct - a.conduct ||
@@ -184,6 +185,7 @@ function finalTieBreak(
     if (!neighbor) return { team, resolved: true };
     const hasOverride = overrides.has(team.team);
     const tiedThroughRankings =
+      team.points === neighbor.points &&
       team.goalDifference === neighbor.goalDifference &&
       team.goalsFor === neighbor.goalsFor &&
       team.conduct === neighbor.conduct &&

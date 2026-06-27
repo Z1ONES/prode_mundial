@@ -82,6 +82,86 @@ describe("FIFA 2026 standings", () => {
     expect(thirds).toHaveLength(12);
     expect(thirds.filter((team) => team.qualified)).toHaveLength(8);
   });
+
+  it("orders third-placed teams by points before goal difference", () => {
+    const thirdRows = [
+      ["A", "A3", 4, -2, 1],
+      ["B", "B3", 3, 5, 8],
+      ["C", "C3", 3, 0, 3],
+      ["D", "D3", 3, -1, 2],
+      ["E", "E3", 3, -2, 1],
+      ["F", "F3", 2, 2, 4],
+      ["G", "G3", 2, 1, 3],
+      ["H", "H3", 2, 0, 2],
+      ["I", "I3", 1, 10, 10],
+      ["J", "J3", 1, 0, 1],
+      ["K", "K3", 0, 0, 0],
+      ["L", "L3", 0, -1, 0]
+    ] as const;
+
+    const standings = new Map(
+      thirdRows.map(([group, team, points, goalDifference, goalsFor]) => [
+        group,
+        [
+          {
+            team: `${group}1`,
+            group,
+            position: 1,
+            played: 3,
+            won: 0,
+            drawn: 0,
+            lost: 0,
+            goalsFor: 0,
+            goalsAgainst: 0,
+            goalDifference: 0,
+            points: 0,
+            conduct: 0,
+            currentRank: null,
+            previousRank: null,
+            resolved: true
+          },
+          {
+            team: `${group}2`,
+            group,
+            position: 2,
+            played: 3,
+            won: 0,
+            drawn: 0,
+            lost: 0,
+            goalsFor: 0,
+            goalsAgainst: 0,
+            goalDifference: 0,
+            points: 0,
+            conduct: 0,
+            currentRank: null,
+            previousRank: null,
+            resolved: true
+          },
+          {
+            team,
+            group,
+            position: 3,
+            played: 3,
+            won: 0,
+            drawn: 0,
+            lost: 0,
+            goalsFor,
+            goalsAgainst: 0,
+            goalDifference,
+            points,
+            conduct: 0,
+            currentRank: null,
+            previousRank: null,
+            resolved: true
+          }
+        ]
+      ])
+    );
+
+    const thirds = rankThirdPlacedTeams(standings);
+    expect(thirds[0]).toMatchObject({ team: "A3", points: 4, qualified: true });
+    expect(thirds.find((team) => team.team === "I3")?.qualified).toBe(false);
+  });
 });
 
 describe("FIFA 2026 Annex C", () => {
