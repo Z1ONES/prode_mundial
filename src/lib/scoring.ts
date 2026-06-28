@@ -20,10 +20,15 @@ export function scorePrediction(input: ScoreInput) {
   }
 
   if (input.isKnockout) {
-    if (!input.actualWinner || input.predictedWinner !== input.actualWinner) return 0;
-    return input.predictedHome === input.actualHome && input.predictedAway === input.actualAway
-      ? 3
-      : 1;
+    const exact =
+      input.predictedHome === input.actualHome &&
+      input.predictedAway === input.actualAway;
+
+    if (!input.actualWinner || input.predictedWinner !== input.actualWinner) {
+      return exact && input.actualHome === input.actualAway ? 1 : 0;
+    }
+
+    return exact ? 3 : 1;
   }
 
   const exact =
