@@ -79,6 +79,18 @@ describe("scorePrediction", () => {
         actualWinner: "Argentina",
         isKnockout: true
       })
+    ).toBe(1);
+
+    expect(
+      scorePrediction({
+        predictedHome: 2,
+        predictedAway: 2,
+        predictedWinner: "Brasil",
+        actualHome: 1,
+        actualAway: 1,
+        actualWinner: "Argentina",
+        isKnockout: true
+      })
     ).toBe(0);
   });
 });
